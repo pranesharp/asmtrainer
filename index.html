@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assembly Lab — COA · Units 3 + 4</title>
+<meta name="description" content="Assembly simulator and practice lab for 21CSS201T Computer Organization & Architecture — Units 3 and 4. Assemble, run and step through COA-8 programs in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2322304a'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' font-weight='700' fill='%23f7f2e7' text-anchor='middle'%3Eas%3C/text%3E%3C/svg%3E">
+<style>
+/* Assembly Lab — static port (cream paper design, no dependencies) */
+:root{
+  --navy:#22304a; --rust:#b3402f; --rust2:#a3542f; --green:#1d4d3b; --green2:#2e6f4e;
+  --gold:#8a6d1d; --txt:#3d4356; --muted:#5c5544; --faint:#7a7460; --ghost:#9a8a6f;
+  --card:#fdf9ef; --cardline:#e2d8c0; --inline:#e9dfc8; --w70:rgba(255,255,255,.7);
+  --codebg:#fffdf6; --chipline:#d8cdb4; --num:#c2b592;
+  --serif:Lora,Georgia,'Times New Roman',serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
+  --sans:ui-sans-serif,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--sans);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;
+  background-color:#f4edda;
+  background-image:
+    radial-gradient(ellipse at 15% 8%, rgba(255,253,246,.9) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(226,214,183,.55) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(140,120,70,.05) 31px 32px);
+}
+::selection{background:#f4e3c8;color:#22304a}
+b{color:#22304a}
+code{border-radius:4px;background:#ece4d2;padding:1px 5px;font-family:var(--mono);font-size:.85em;color:#8a3324}
+
+/* ---------- header ---------- */
+header.top{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--chipline);
+  background:rgba(247,241,225,.95);backdrop-filter:blur(4px)}
+.topin{max-width:1024px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;
+  gap:8px 16px;padding:10px 16px}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand .bt{font-family:var(--serif);font-weight:700;font-size:1.15rem;color:var(--navy)}
+.brand .bs{font-family:var(--mono);font-size:11px;color:var(--rust2)}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px}
+nav.tabs button{border:0;background:transparent;cursor:pointer;border-radius:6px;
+  padding:6px 12px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
+  transition:background .15s,color .15s}
+nav.tabs button:hover{background:#efe6cf;color:var(--rust)}
+nav.tabs button.on{background:var(--navy);color:#f7f2e7}
+.progwrap{margin-left:auto;display:flex;align-items:center;gap:8px}
+.progwrap .pt{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.pbar{width:96px;height:8px;border-radius:99px;background:#e6dcc4;overflow:hidden}
+.pbar>i{display:block;height:100%;background:var(--green2);border-radius:99px;transition:width .3s}
+
+/* ---------- layout ---------- */
+main{max-width:1024px;width:100%;margin:0 auto;flex:1;padding:24px 16px 32px}
+.masthead h2{font-family:var(--serif);font-size:1.9rem;font-weight:700;color:var(--navy);margin:0}
+.masthead p{max-width:760px;margin:6px 0 0;font-size:15px;line-height:1.65}
+.stack>*+*{margin-top:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips .sep{width:1px;height:20px;background:var(--chipline);margin:0 4px}
+.chip{border:1px solid var(--chipline);background:var(--w70);cursor:pointer;border-radius:99px;
+  padding:5px 13px;font-family:var(--mono);font-size:12px;color:var(--muted);transition:all .15s}
+.chip:hover{border-color:var(--rust);color:var(--rust)}
+.chip.on{border-color:var(--rust);background:var(--rust);color:#fdf6ec}
+.empty{border:1px dashed #c9b98f;background:rgba(255,255,255,.5);border-radius:12px;padding:32px;
+  text-align:center;font-family:var(--mono);font-size:13px;color:var(--ghost)}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--cardline);border-radius:12px;padding:20px 22px;
+  box-shadow:0 1px 2px rgba(90,70,30,.06)}
+.card.solved{border-color:rgba(46,111,78,.6)}
+.kick{margin:0 0 4px;font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.18em;color:var(--rust2)}
+.card h3{margin:0;font-size:1.12rem;color:var(--navy);font-weight:700}
+.brow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.badge{border:0;border-radius:4px;padding:2px 9px;font-family:var(--mono);font-size:11px;
+  white-space:nowrap}
+.badge.u3{background:#2e6f4e;color:#eaf6ee}
+.badge.u4{background:#a3542f;color:#fdf1e7}
+.badge.solv{background:#2e7d32;color:#eaf6ee}
+.obadge{background:transparent;border-radius:4px;border:1px solid;padding:1px 9px;
+  font-family:var(--mono);font-size:11px;white-space:nowrap}
+.obadge.basic{color:#2e6f4e;border-color:rgba(46,111,78,.5)}
+.obadge.medium{color:#8a6d1d;border-color:rgba(138,109,29,.5)}
+.obadge.hard{color:#b3402f;border-color:rgba(179,64,47,.5)}
+.cbadge{border:1px solid #c9b98f;border-radius:4px;padding:1px 8px;font-family:var(--mono);
+  font-size:10px;color:#7a6a3e;white-space:nowrap}
+.stmt{margin:0 0 16px;font-size:15px;line-height:1.7}
+.concepts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+
+/* requirements box */
+.reqbox{border:1px solid var(--inline);background:var(--w70);border-radius:8px;padding:12px 14px;margin-bottom:16px}
+.reqbox .rh{font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--navy);margin-bottom:6px}
+.reqbox ul{margin:0;padding-left:20px;font-size:14px}
+.reqbox li{margin:3px 0}
+.conchip{display:inline-block;margin:8px 8px 0 0;border-radius:4px;padding:2px 9px;
+  font-family:var(--mono);font-size:11px}
+.conchip.ban{border:1px solid rgba(179,64,47,.4);background:#fbeeea;color:#b3402f}
+.conchip.req{border:1px solid rgba(46,111,78,.4);background:#eef6ef;color:#2e6f4e}
+.conchip.max{border:1px solid rgba(138,109,29,.4);background:#fdf3dd;color:#8a6d1d}
+
+/* ---------- code ---------- */
+.codeblock{overflow-x:auto;border:1px solid var(--chipline);background:var(--codebg);
+  border-radius:8px;font-family:var(--mono);font-size:13px;line-height:1.65;margin:0 0 14px}
+.codeblock pre{margin:0;min-width:max-content}
+.cl{display:flex;min-width:max-content;padding:0 8px}
+.cl .ln{margin-right:12px;width:28px;flex:0 0 auto;user-select:none;text-align:right;color:var(--num)}
+.cl.active{background:#f4e3c8;box-shadow:inset 3px 0 0 var(--rust)}
+.cl .ws{white-space:pre}
+.t-com{font-style:italic;color:#9a8a6f}
+.t-lab{color:#b3402f;font-weight:600}
+.t-mne{font-weight:600;color:#1d4d3b}
+.t-reg{color:#0f6a8b;font-weight:500}
+.t-imm{color:#8a6d1d;font-weight:500}
+.t-num{color:#8a6d1d}
+.t-sym{color:#5b4a89}
+textarea.editor{width:100%;resize:vertical;border:1px solid var(--chipline);background:var(--codebg);
+  border-radius:8px;padding:12px;font-family:var(--mono);font-size:13px;line-height:1.65;
+  color:#2b2b26;box-shadow:inset 0 1px 3px rgba(90,70,30,.08);outline:none;transition:border .15s}
+textarea.editor:focus{border-color:var(--rust);box-shadow:0 0 0 3px rgba(179,64,47,.15)}
+
+/* ---------- details ---------- */
+details.plain{border:1px solid var(--cardline);background:var(--w70);border-radius:8px;margin-bottom:14px}
+details.plain>summary{cursor:pointer;user-select:none;padding:8px 12px;font-family:var(--mono);
+  font-size:12px;font-weight:600;color:var(--navy);list-style:none}
+details.plain>summary::-webkit-details-marker{display:none}
+details.plain>summary::before{content:"▸ ";}
+details.plain[open]>summary::before{content:"▾ ";}
+details.plain>summary:hover{color:var(--rust)}
+details.plain .inner{padding:2px 14px 12px 30px}
+details.plain ul{margin:0;padding-left:20px;font-size:14px;line-height:1.65}
+details.plain li{margin:6px 0}
+.solrow{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}
+.solrow .hint{font-family:var(--mono);font-size:11px;color:var(--ghost)}
+
+/* ---------- buttons / trace controls ---------- */
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn{cursor:pointer;border-radius:6px;border:1px solid var(--chipline);background:var(--w70);
+  padding:7px 13px;font-family:var(--mono);font-size:12px;font-weight:500;color:var(--navy);
+  transition:all .15s}
+.btn:hover:not(:disabled){border-color:var(--rust);color:var(--rust)}
+.btn:disabled{cursor:not-allowed;opacity:.4}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#f7f2e7;font-weight:600;
+  padding:7px 16px;box-shadow:0 1px 2px rgba(34,48,74,.3)}
+.btn.primary:hover:not(:disabled){background:var(--rust);border-color:var(--rust);color:#f7f2e7}
+.steps{font-family:var(--mono);font-size:11px;color:var(--ghost)}
+
+/* ---------- parse errors ---------- */
+.errpanel{border:1px solid #e08a8a;background:#fbeeea;border-radius:8px;padding:12px 14px;margin-top:12px}
+.errpanel .eh{font-family:var(--mono);font-size:12px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:#b3402f;margin-bottom:6px}
+.errpanel ul{margin:0;font-family:var(--mono);font-size:12px;color:#8a3324}
+.errpanel li{margin:3px 0}
+
+/* ---------- verify ---------- */
+.warnbox{border:1px solid #e0a13a;background:#fdf3dd;color:#8a5a12;border-radius:8px;
+  padding:8px 12px;font-family:var(--mono);font-size:12px;margin-top:12px}
+.vrows{overflow:hidden;border:1px solid var(--chipline);border-radius:8px;margin-top:12px}
+.vrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:8px 12px;
+  border-bottom:1px solid #eee5cf;font-size:14px}
+.vrow:last-child{border-bottom:0}
+.vrow.pass{background:#f0f7ee}
+.vrow.fail{background:#fbeeea}
+.vrow .mk{font-weight:700}
+.vrow.pass .mk{color:#2e7d32}
+.vrow.fail .mk{color:#b3402f}
+.vrow .vd{font-weight:500;color:var(--navy)}
+.vrow .vx{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.vrow .vh{width:100%;padding-left:24px;font-size:12px;font-style:italic;color:var(--rust2)}
+.vmeta{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--ghost)}
+
+/* ---------- machine view ---------- */
+.machine{border:1px solid #2c3a50;background:#141e2c;border-radius:12px;padding:14px;margin-top:14px}
+.machine.off{padding:16px;text-align:center;font-family:var(--mono);font-size:13px;color:#7e8ba0}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mlab{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#7e8ba0}
+.mpc{font-family:var(--mono);font-size:11px;color:#7e8ba0}
+.regs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.regcell{border:1px solid #2c3a50;background:#1d293a;border-radius:6px;padding:6px 4px;text-align:center}
+.regcell.chg{border-color:#e05c47;background:#2a1d1e}
+.regcell .rl{font-family:var(--mono);font-size:10px;color:#7e8ba0}
+.regcell .rv{font-family:var(--mono);font-size:14px;font-weight:600;color:#e8e3d5}
+.regcell.chg .rv{color:#ff9c85}
+.regcell .rh2{font-family:var(--mono);font-size:9px;color:#5f6c81}
+.flagrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.flag{border-radius:4px;padding:2px 8px;font-family:var(--mono);font-size:12px;font-weight:700;
+  background:#1d293a;color:#4d5a70}
+.flag.on{background:#2a4a33;color:#8fe3a7}
+.memlab{margin:12px 0 4px;font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.2em;color:#7e8ba0}
+.memrows{max-height:176px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3a4a63 transparent}
+.memrow{display:flex;align-items:center;justify-content:space-between;border-radius:4px;
+  padding:2px 8px;font-family:var(--mono);font-size:12px;color:#c9c2ae}
+.memrow.chg{background:#2a1d1e;color:#ff9c85}
+.memrow .ml{width:112px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;color:#8fa0ba}
+.memrow .ma{color:#5f6c81}
+.memrow .mv{width:64px;text-align:right;font-weight:600}
+.memrow .mh{width:64px;text-align:right;font-size:10px;color:#5f6c81}
+.memnone{font-family:var(--mono);font-size:12px;color:#5f6c81}
+
+/* ---------- trace log ---------- */
+.tracelog{max-height:224px;overflow-y:auto;border:1px solid var(--chipline);background:var(--codebg);
+  border-radius:8px;padding:6px;margin-top:14px;scrollbar-width:thin;scrollbar-color:#c9b98f transparent}
+.trow{display:flex;align-items:baseline;gap:8px;width:100%;border:0;background:transparent;
+  cursor:pointer;text-align:left;padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:12px}
+.trow:hover{background:#f6efdd}
+.trow.cur{background:#f4e3c8}
+.trow .tn{width:32px;flex:0 0 auto;text-align:right;color:var(--num)}
+.trow .tl{width:34px;flex:0 0 auto;color:#b0a280}
+.trow .tx{flex:0 0 auto;font-weight:600;color:#1d4d3b}
+.trow .tnote{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ghost)}
+.trow-empty{padding:8px;font-family:var(--mono);font-size:12px;color:var(--ghost)}
+
+/* ---------- reference ---------- */
+.refgrid{display:grid;gap:16px}
+.refgrid>*{min-width:0}
+@media(min-width:760px){.refgrid.g2{grid-template-columns:1fr 1fr}}
+.refcard{background:var(--card);border:1px solid var(--cardline);border-radius:12px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(90,70,30,.06)}
+.refcard h3{margin:2px 0 14px;font-family:var(--serif);font-size:1.3rem;color:var(--navy)}
+.tblwrap{overflow-x:auto}
+table.inst{width:100%;min-width:560px;border-collapse:collapse;font-size:14px}
+table.inst.wide{min-width:620px}
+table.inst th{border-bottom:2px solid #d8cdb4;text-align:left;font-family:var(--mono);font-size:11px;
+  text-transform:uppercase;letter-spacing:.08em;color:#7a7460;padding:6px 10px 6px 0;font-weight:600}
+table.inst td{border-bottom:1px solid #eee5cf;padding:8px 10px 8px 0;vertical-align:top}
+table.inst tr:last-child td{border-bottom:0}
+td.mne{font-family:var(--mono);font-weight:600;color:#1d4d3b;white-space:nowrap}
+td.fmt{font-family:var(--mono);font-size:12px;color:#22304a;white-space:nowrap}
+td.flg{font-family:var(--mono);font-size:12px;color:#8a6d1d;white-space:nowrap}
+td.syn{font-family:var(--mono);font-size:12px;font-weight:500;color:#8a3324;white-space:nowrap}
+td.ea{font-family:var(--mono);font-size:12px;color:#3d4356;white-space:nowrap}
+td.exm{font-family:var(--mono);font-size:12px;color:#1d4d3b;white-space:nowrap}
+.notebox{margin-top:12px;border-radius:8px;background:#f4e3c8;padding:8px 12px;font-size:14px;color:#5c4a2a}
+.gotchas{display:grid;gap:12px}
+@media(min-width:640px){.gotchas{grid-template-columns:1fr 1fr}}
+.gotcha{border:1px solid var(--inline);background:var(--w70);border-radius:8px;padding:12px 14px}
+.gotcha .gt{margin-bottom:4px;font-weight:600;color:var(--rust)}
+.gotcha p{margin:0;font-size:14px;line-height:1.6}
+.machtext{font-size:14px;line-height:1.7}
+.machtext p{margin:8px 0}
+
+/* ---------- playground ---------- */
+.pghead h3{margin:0 0 4px;font-size:1.12rem;color:var(--navy)}
+.pghead p{margin:0 0 14px;font-size:14px;color:var(--txt)}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;flex-direction:column;gap:8px}
+.toast{background:#1d293a;color:#f0ead8;border-radius:10px;padding:12px 16px;max-width:340px;
+  box-shadow:0 8px 24px rgba(20,30,44,.35);border-left:4px solid var(--green2);
+  animation:tin .25s ease}
+.toast.bad{border-left-color:var(--rust)}
+.toast .tt{font-weight:600;font-size:14px}
+.toast .td2{font-size:12.5px;color:#b9c2d4;margin-top:3px;line-height:1.5}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- footer ---------- */
+footer.site{margin-top:auto;border-top:1px solid var(--chipline);background:#f2ead6}
+footer.site .fin{max-width:1024px;margin:0 auto;padding:12px 16px;text-align:center;
+  font-family:var(--mono);font-size:11px;color:#8a7f65;line-height:1.7}
+
+@media(max-width:640px){
+  .masthead h2{font-size:1.5rem}
+  .card{padding:16px 14px}
+  .refcard{padding:14px}
+  .progwrap{margin-left:0}
+  .regs{grid-template-columns:repeat(4,1fr)}
+}
+
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="topin">
+    <div class="brand">
+      <span class="bt">Assembly&nbsp;Lab</span>
+      <span class="bs">COA · Instruction Trainer</span>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button type="button" data-tab="reference">Reference</button>
+      <button type="button" data-tab="examples" class="on">Examples</button>
+      <button type="button" data-tab="practice">Practice</button>
+      <button type="button" data-tab="playground">Playground</button>
+    </nav>
+    <div class="progwrap">
+      <span class="pt" id="solvedCount">0/15 solved</span>
+      <div class="pbar"><i id="progBar" style="width:0%"></i></div>
+    </div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer class="site">
+  <div class="fin">
+    Assembly Lab · built for 21CSS201T Computer Organization &amp; Architecture · Topics cover the Unit,  Unit 3
+    + Unit 4 · 
+  </div>
+</footer>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+window.AsmEngine = (function (exports) {
+
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  function __accessProp(key) {
+    return this[key];
+  }
+  var __toCommonJS = (from) => {
+    var entry = (__moduleCache ??= new WeakMap).get(from), desc;
+    if (entry)
+      return entry;
+    entry = __defProp({}, "__esModule", { value: true });
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (var key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(entry, key))
+          __defProp(entry, key, {
+            get: __accessProp.bind(from, key),
+            enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+          });
+    }
+    __moduleCache.set(from, entry);
+    return entry;
+  };
+  var __moduleCache;
+  var __returnValue = (v) => v;
+  function __exportSetter(name, newValue) {
+    this[name] = __returnValue.bind(null, newValue);
+  }
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, {
+        get: all[name],
+        enumerable: true,
+        configurable: true,
+        set: __exportSetter.bind(all, name)
+      });
+  };
+
+  // src/lib/asm/engine.ts
+  var exports = {};
+  __export(exports, {
+    verify: () => verify,
+    toUnsigned: () => toUnsigned,
+    toSigned: () => toSigned,
+    toHex: () => toHex,
+    toBin16: () => toBin16,
+    runProgram: () => runProgram,
+    runAndVerify: () => runAndVerify,
+    evalExpr: () => evalExpr,
+    assemble: () => assemble,
+    MEM_SIZE: () => MEM_SIZE
+  });
+  var MEM_SIZE = 256;
+  var WORD_MASK = 65535;
+  function toSigned(v) {
+    const x = v & WORD_MASK;
+    return x >= 32768 ? x - 65536 : x;
+  }
+  function toUnsigned(v) {
+    return v & WORD_MASK;
+  }
+  function toHex(v) {
+    return "0x" + toUnsigned(v).toString(16).toUpperCase().padStart(4, "0");
+  }
+  function toBin16(v) {
+    return toUnsigned(v).toString(2).padStart(16, "0");
+  }
+  function parseNumber(tok) {
+    const t = tok.trim().toUpperCase();
+    let m;
+    if (m = t.match(/^0X([0-9A-F]+)$/))
+      return parseInt(m[1], 16);
+    if (m = t.match(/^0B([01]+)$/))
+      return parseInt(m[1], 2);
+    if (m = t.match(/^(-?\d+)$/))
+      return parseInt(m[1], 10);
+    return null;
+  }
+  function evalExpr(expr, symbols) {
+    const parts = expr.trim().match(/([+-]?)([^+-]+)/g);
+    if (!parts)
+      return null;
+    let total = 0;
+    for (const part of parts) {
+      const sign = part.startsWith("-") ? -1 : 1;
+      const term = part.replace(/^[+-]/, "").trim();
+      if (!term)
+        return null;
+      let v = parseNumber(term);
+      if (v === null) {
+        const sv = symbols[term.toUpperCase()];
+        if (sv === undefined)
+          return null;
+        v = sv;
+      }
+      total += sign * v;
+    }
+    return total;
+  }
+  var COND_CANON = {
+    ">0": ">0",
+    ">=0": ">=0",
+    "≥0": ">=0",
+    "<0": "<0",
+    "<=0": "<=0",
+    "≤0": "<=0",
+    "=0": "=0",
+    "==0": "=0",
+    "!=0": "!=0",
+    "<>0": "!=0",
+    "≠0": "!=0"
+  };
+  var ALIAS = {
+    MOV: "MOVE",
+    LOAD: "MOVE",
+    BRA: "BRANCH",
+    BGT: "BRANCH_GT0",
+    BLT: "BRANCH_LT0",
+    BGE: "BRANCH_GE0",
+    BLE: "BRANCH_LE0",
+    BEQ: "BRANCH_EQ0",
+    BNE: "BRANCH_NE0",
+    INC: "INCREMENT",
+    DEC: "DECREMENT",
+    NEG: "NEGATE",
+    COMPLEMENT: "NOT",
+    COMP: "NOT",
+    CLR: "CLEAR",
+    CMP: "COMPARE",
+    TST: "TEST",
+    WORD: "DATAWORD",
+    ".WORD": "DATAWORD",
+    DW: "DATAWORD"
+  };
+  var KNOWN_OPS = new Set([
+    "MOVE",
+    "STORE",
+    "ADD",
+    "SUB",
+    "MUL",
+    "AND",
+    "OR",
+    "XOR",
+    "CLEAR",
+    "NOT",
+    "NEGATE",
+    "INCREMENT",
+    "DECREMENT",
+    "SHL",
+    "SHR",
+    "ROL",
+    "ROR",
+    "COMPARE",
+    "TEST",
+    "BRANCH",
+    "HALT"
+  ]);
+  var BAKED_COND = {
+    BRANCH_GT0: ">0",
+    BRANCH_LT0: "<0",
+    BRANCH_GE0: ">=0",
+    BRANCH_LE0: "<=0",
+    BRANCH_EQ0: "=0",
+    BRANCH_NE0: "!=0"
+  };
+  function splitOperands(s) {
+    if (!s.trim())
+      return [];
+    return s.split(",").map((x) => x.trim()).filter((x) => x.length > 0);
+  }
+  function parseOperand(tok, errors, line) {
+    const t = tok.trim();
+    if (!t) {
+      errors.push({ line, message: "Empty operand" });
+      return null;
+    }
+    if (t.startsWith("#"))
+      return { mode: "imm", expr: t.slice(1).trim() };
+    let m = t.match(/^-\((R[0-7])\)$/i);
+    if (m)
+      return { mode: "autodec", reg: parseInt(m[1][1], 10) };
+    m = t.match(/^\((R[0-7])\)\+$/i);
+    if (m)
+      return { mode: "autoinc", reg: parseInt(m[1][1], 10) };
+    m = t.match(/^\((R[0-7])\)$/i);
+    if (m)
+      return { mode: "indirect", reg: parseInt(m[1][1], 10) };
+    m = t.match(/^(R[0-7])$/i);
+    if (m)
+      return { mode: "reg", reg: parseInt(m[1][1], 10) };
+    m = t.match(/^(.+)\((R[0-7])\)$/i);
+    if (m)
+      return { mode: "indexed", expr: m[1].trim(), reg: parseInt(m[2][1], 10) };
+    return { mode: "direct", expr: t };
+  }
+  function stripComment(text) {
+    const i = text.search(/--|;/);
+    return (i >= 0 ? text.slice(0, i) : text).trim();
+  }
+  function assemble(source) {
+    const errors = [];
+    const symbols = {};
+    const insts = [];
+    const dataCells = [];
+    const initMem = new Array(MEM_SIZE).fill(0);
+    const lines = source.split(`
+`);
+    const entries = [];
+    let cursor = 0;
+    for (let i = 0;i < lines.length; i++) {
+      const lineno = i + 1;
+      let text = stripComment(lines[i]);
+      if (!text)
+        continue;
+      let label;
+      const lm = text.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*/);
+      if (lm) {
+        label = lm[1].toUpperCase();
+        text = text.slice(lm[0].length).trim();
+        if (!text) {
+          if (symbols[label] !== undefined)
+            errors.push({ line: lineno, message: `Duplicate label "${label}"` });
+          else
+            symbols[label] = cursor;
+          continue;
+        }
+      }
+      text = text.replace(/^(branch)(>=0|<=0|!=0|<>0|==0|>0|<0|=0|≠0|≥0|≤0)(\s+|$)/i, "$1 $2$3");
+      const sp = text.match(/^(\.?[A-Za-z_][A-Za-z0-9_.]*)(?:\s+(.*))?$/);
+      if (!sp) {
+        errors.push({ line: lineno, message: `Cannot parse line: "${text}"` });
+        continue;
+      }
+      let mnemonic = sp[1].toUpperCase();
+      let rest = (sp[2] ?? "").trim();
+      const eq2 = text.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+EQU\s+(.+)$/i);
+      if (eq2 && !label) {
+        const v = evalExpr(eq2[2], symbols);
+        const lab = eq2[1].toUpperCase();
+        if (v === null)
+          errors.push({ line: lineno, message: `Bad EQU value: "${eq2[2]}"` });
+        else if (symbols[lab] !== undefined)
+          errors.push({ line: lineno, message: `Duplicate label "${lab}"` });
+        else
+          symbols[lab] = toUnsigned(v);
+        continue;
+      }
+      if (mnemonic === "EQU") {
+        if (!label) {
+          errors.push({ line: lineno, message: "EQU needs a label, e.g.  NUM EQU 12" });
+          continue;
+        }
+        const v = evalExpr(rest, symbols);
+        if (v === null)
+          errors.push({ line: lineno, message: `Bad EQU value: "${rest}"` });
+        else if (symbols[label] !== undefined)
+          errors.push({ line: lineno, message: `Duplicate label "${label}"` });
+        else
+          symbols[label] = toUnsigned(v);
+        continue;
+      }
+      if (mnemonic === "ORG") {
+        const v = evalExpr(rest, symbols);
+        if (v === null || v < 0 || v >= MEM_SIZE) {
+          errors.push({
+            line: lineno,
+            message: `Bad ORG address: "${rest}" (must be 0..${MEM_SIZE - 1})`
+          });
+          continue;
+        }
+        cursor = v;
+        if (label)
+          symbols[label] = cursor;
+        continue;
+      }
+      if (ALIAS[mnemonic])
+        mnemonic = ALIAS[mnemonic];
+      if (!KNOWN_OPS.has(mnemonic) && mnemonic !== "DATAWORD") {
+        errors.push({ line: lineno, message: `Unknown instruction "${sp[1]}"` });
+        continue;
+      }
+      if (label) {
+        if (symbols[label] !== undefined)
+          errors.push({ line: lineno, message: `Duplicate label "${label}"` });
+        else
+          symbols[label] = cursor;
+      }
+      if (mnemonic === "DATAWORD") {
+        const vals = splitOperands(rest);
+        if (vals.length === 0) {
+          errors.push({ line: lineno, message: "DATAWORD needs at least one value" });
+          continue;
+        }
+        for (let k = 0;k < vals.length; k++) {
+          const v = evalExpr(vals[k], symbols);
+          if (v === null) {
+            errors.push({ line: lineno, message: `Bad data value: "${vals[k]}"` });
+            continue;
+          }
+          const a = (cursor + k) % MEM_SIZE;
+          initMem[a] = toUnsigned(v);
+          dataCells.push({ addr: a, label: k === 0 ? label ?? `@${a}` : `${label ?? "@" + a}+${k}` });
+        }
+        cursor += vals.length;
+        continue;
+      }
+      entries.push({ line: lineno, label, mnemonic, rest, addr: cursor });
+      cursor += 1;
+    }
+    for (const e of entries) {
+      let op = e.mnemonic;
+      let cond;
+      let opStr = e.rest;
+      if (BAKED_COND[op]) {
+        cond = BAKED_COND[op];
+        op = "BRANCH";
+      }
+      let toks = splitOperands(opStr);
+      if (op === "BRANCH") {
+        const cm = opStr.match(/^(>=0|<=0|!=0|<>0|==0|>0|<0|=0|≠0|≥0|≤0)\s*(.*)$/);
+        if (cm) {
+          cond = COND_CANON[cm[1]];
+          toks = splitOperands(cm[2].trim());
+        } else if (toks.length >= 2 && COND_CANON[toks[0]]) {
+          cond = COND_CANON[toks[0]];
+          toks = toks.slice(1);
+        }
+      }
+      const operands = [];
+      for (const tk of toks) {
+        const o = parseOperand(tk, errors, e.line);
+        if (o)
+          operands.push(o);
+      }
+      const THREE_OP = new Set(["ADD", "SUB", "MUL", "AND", "OR", "XOR"]);
+      const ONE_OP_WRITE = new Set(["CLEAR", "NOT", "NEGATE", "INCREMENT", "DECREMENT"]);
+      const TWO_OP = new Set(["MOVE", "STORE", "COMPARE", "SHL", "SHR", "ROL", "ROR"]);
+      let arityOk = true;
+      if (THREE_OP.has(op))
+        arityOk = operands.length === 2 || operands.length === 3;
+      else if (ONE_OP_WRITE.has(op))
+        arityOk = operands.length === 1;
+      else if (TWO_OP.has(op))
+        arityOk = operands.length === 2;
+      else if (op === "TEST")
+        arityOk = operands.length === 1;
+      else if (op === "BRANCH")
+        arityOk = operands.length === 1;
+      else if (op === "HALT")
+        arityOk = operands.length === 0;
+      if (!arityOk) {
+        const expect = THREE_OP.has(op) ? "2 or 3" : ONE_OP_WRITE.has(op) || op === "TEST" || op === "BRANCH" ? "1" : TWO_OP.has(op) ? "2" : "0";
+        errors.push({
+          line: e.line,
+          message: `${op} expects ${expect} operand(s), got ${operands.length}`
+        });
+        continue;
+      }
+      const shown = op === "BRANCH" ? cond ? `Branch${cond}` : "Branch" : e.mnemonic;
+      insts.push({
+        line: e.line,
+        text: [shown, toks.join(", ")].join(" ").replace(/\s+/g, " ").trim(),
+        op,
+        cond,
+        operands,
+        addr: e.addr,
+        label: e.label
+      });
+    }
+    for (const ins of insts) {
+      for (const o of ins.operands) {
+        if (o.mode === "imm" || o.mode === "direct" || o.mode === "indexed") {
+          const v = evalExpr(o.expr ?? "", symbols);
+          if (v === null) {
+            errors.push({
+              line: ins.line,
+              message: `Undefined symbol or bad expression: "${o.expr}"`
+            });
+          } else {
+            o.value = toUnsigned(v);
+          }
+        }
+      }
+    }
+    return {
+      insts,
+      symbols,
+      dataCells,
+      errors,
+      initMem,
+      firstInstAddr: insts.length > 0 ? insts[0].addr : 0
+    };
+  }
+  function setNZ(st, res) {
+    const u = toUnsigned(res);
+    st.flags.Z = u === 0;
+    st.flags.N = (u & 32768) !== 0;
+  }
+  function signedSumOverflow(a, b) {
+    return toSigned(a) + toSigned(b) > 32767 || toSigned(a) + toSigned(b) < -32768;
+  }
+  function readOperand(st, o, note) {
+    switch (o.mode) {
+      case "imm":
+        return toUnsigned(o.value ?? 0);
+      case "reg":
+        return st.regs[o.reg];
+      case "direct":
+        return st.mem[toUnsigned(o.value ?? 0) % MEM_SIZE];
+      case "indexed": {
+        const a = toUnsigned((o.value ?? 0) + st.regs[o.reg]) % MEM_SIZE;
+        return st.mem[a];
+      }
+      case "indirect":
+        return st.mem[st.regs[o.reg] % MEM_SIZE];
+      case "autoinc": {
+        const a = st.regs[o.reg] % MEM_SIZE;
+        const v = st.mem[a];
+        const after = toUnsigned(st.regs[o.reg] + 1);
+        st.regs[o.reg] = after;
+        note.push(`R${o.reg} → ${after} (autoincrement after use)`);
+        return v;
+      }
+      case "autodec": {
+        const after = toUnsigned(st.regs[o.reg] - 1);
+        st.regs[o.reg] = after;
+        const v = st.mem[after % MEM_SIZE];
+        note.push(`R${o.reg} → ${after} (autodecrement before use)`);
+        return v;
+      }
+    }
+  }
+  function resolveAddr(st, o) {
+    switch (o.mode) {
+      case "direct":
+        return toUnsigned(o.value ?? 0) % MEM_SIZE;
+      case "indirect":
+        return st.regs[o.reg] % MEM_SIZE;
+      case "indexed":
+        return toUnsigned((o.value ?? 0) + st.regs[o.reg]) % MEM_SIZE;
+      case "autoinc": {
+        const a = st.regs[o.reg] % MEM_SIZE;
+        st.regs[o.reg] = toUnsigned(st.regs[o.reg] + 1);
+        return a;
+      }
+      case "autodec": {
+        const after = toUnsigned(st.regs[o.reg] - 1);
+        st.regs[o.reg] = after;
+        return after % MEM_SIZE;
+      }
+      default:
+        return null;
+    }
+  }
+  function writeOperand(st, o, value, memChanges, note) {
+    if (o.mode === "reg") {
+      st.regs[o.reg] = toUnsigned(value);
+      note.push(`R${o.reg} = ${toSigned(value)}`);
+      return true;
+    }
+    const a = resolveAddr(st, o);
+    if (a === null)
+      return false;
+    const before = st.mem[a];
+    const after = toUnsigned(value);
+    st.mem[a] = after;
+    if (o.mode === "autoinc")
+      note.push(`R${o.reg} → ${st.regs[o.reg]} (autoincrement after use)`);
+    if (o.mode === "autodec")
+      note.push(`R${o.reg} → ${st.regs[o.reg]} (autodecrement before use)`);
+    note.push(`[${a}] = ${toSigned(after)}`);
+    memChanges.push({ addr: a, before, after });
+    return true;
+  }
+  function condTaken(st, cond) {
+    const { N, Z, V } = st.flags;
+    switch (cond) {
+      case ">0":
+        return !Z && N === V;
+      case ">=0":
+        return N === V;
+      case "<0":
+        return N !== V;
+      case "<=0":
+        return Z || N !== V;
+      case "=0":
+        return Z;
+      case "!=0":
+        return !Z;
+      default:
+        return true;
+    }
+  }
+  function runProgram(program, maxSteps = 20000) {
+    const st = {
+      regs: new Array(8).fill(0),
+      flags: { N: false, Z: false, C: false, V: false },
+      mem: program.initMem.slice(),
+      pc: program.firstInstAddr,
+      halted: false
+    };
+    const byAddr = new Map;
+    for (const ins of program.insts)
+      byAddr.set(ins.addr, ins);
+    const trace = [];
+    let error = null;
+    let steps = 0;
+    while (!st.halted && steps < maxSteps) {
+      const ins = byAddr.get(st.pc);
+      if (!ins) {
+        st.halted = true;
+        if (trace.length === 0)
+          error = "No instruction to execute at the starting address.";
+        break;
+      }
+      const memChanges = [];
+      const note = [];
+      st.pc = toUnsigned(st.pc + 1);
+      let jumped = false;
+      switch (ins.op) {
+        case "MOVE": {
+          const v = readOperand(st, ins.operands[0], note);
+          const ok = writeOperand(st, ins.operands[1], v, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: MOVE destination must be a register or a memory operand`;
+          break;
+        }
+        case "STORE": {
+          const v = readOperand(st, ins.operands[0], note);
+          const a = resolveAddr(st, ins.operands[1]);
+          if (a === null) {
+            error = `Line ${ins.line}: STORE destination must be a memory operand like (R1), LIST(R2), (R0)+ or -(R1)`;
+          } else {
+            const before = st.mem[a];
+            st.mem[a] = toUnsigned(v);
+            memChanges.push({ addr: a, before, after: toUnsigned(v) });
+            note.push(`[${a}] = ${toSigned(v)}`);
+          }
+          break;
+        }
+        case "ADD":
+        case "SUB":
+        case "MUL":
+        case "AND":
+        case "OR":
+        case "XOR": {
+          const a = readOperand(st, ins.operands[0], note);
+          const b = readOperand(st, ins.operands[1], note);
+          const dst = ins.operands[ins.operands.length - 1];
+          let r = 0;
+          if (ins.op === "ADD") {
+            r = a + b;
+            st.flags.C = r > WORD_MASK;
+            st.flags.V = signedSumOverflow(a, b);
+          } else if (ins.op === "SUB") {
+            r = ins.operands.length === 2 ? b - a : a - b;
+            const ua = toUnsigned(ins.operands.length === 2 ? b : a);
+            const ub = toUnsigned(ins.operands.length === 2 ? a : b);
+            st.flags.C = ua < ub;
+            const sd = toSigned(ua) - toSigned(ub);
+            st.flags.V = sd > 32767 || sd < -32768;
+          } else if (ins.op === "MUL") {
+            const p = toSigned(a) * toSigned(b);
+            r = p;
+            st.flags.C = false;
+            st.flags.V = p > 32767 || p < -32768;
+          } else {
+            r = ins.op === "AND" ? a & b : ins.op === "OR" ? a | b : a ^ b;
+            st.flags.C = false;
+            st.flags.V = false;
+          }
+          const ok = writeOperand(st, dst, r, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          else
+            setNZ(st, r);
+          break;
+        }
+        case "CLEAR": {
+          const ok = writeOperand(st, ins.operands[0], 0, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          break;
+        }
+        case "NOT": {
+          const v = readOperand(st, ins.operands[0], note);
+          const ok = writeOperand(st, ins.operands[0], ~v, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          else {
+            setNZ(st, ~v);
+            st.flags.C = false;
+            st.flags.V = false;
+          }
+          break;
+        }
+        case "NEGATE": {
+          const v = toSigned(readOperand(st, ins.operands[0], note));
+          const ok = writeOperand(st, ins.operands[0], -v, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          else {
+            setNZ(st, -v);
+            st.flags.V = v === -32768;
+            st.flags.C = false;
+          }
+          break;
+        }
+        case "INCREMENT":
+        case "DECREMENT": {
+          const v = readOperand(st, ins.operands[0], note);
+          const r = ins.op === "INCREMENT" ? v + 1 : v - 1;
+          const ok = writeOperand(st, ins.operands[0], r, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          else
+            setNZ(st, r);
+          break;
+        }
+        case "SHL":
+        case "SHR":
+        case "ROL":
+        case "ROR": {
+          const v = readOperand(st, ins.operands[0], note);
+          const cnt = toUnsigned(readOperand(st, ins.operands[1], note));
+          let r = toUnsigned(v);
+          if (cnt === 0) {
+            st.flags.C = false;
+          } else if (ins.op === "SHL") {
+            const n = Math.min(cnt, 16);
+            st.flags.C = (r & 1 << 16 - n) !== 0;
+            r = r << n & WORD_MASK;
+          } else if (ins.op === "SHR") {
+            const n = Math.min(cnt, 16);
+            st.flags.C = (r & 1 << n - 1) !== 0;
+            r = r >>> n;
+          } else if (ins.op === "ROL") {
+            const n = cnt % 16;
+            st.flags.C = n > 0 ? (r & 1 << 16 - n) !== 0 : false;
+            r = (r << n | r >>> 16 - n) & WORD_MASK;
+          } else {
+            const n = cnt % 16;
+            st.flags.C = n > 0 ? (r & 1 << n - 1) !== 0 : false;
+            r = (r >>> n | r << 16 - n) & WORD_MASK;
+          }
+          const ok = writeOperand(st, ins.operands[0], r, memChanges, note);
+          if (!ok)
+            error = `Line ${ins.line}: destination must be a register or a memory operand`;
+          else
+            setNZ(st, r);
+          st.flags.V = false;
+          break;
+        }
+        case "COMPARE": {
+          const a = readOperand(st, ins.operands[0], note);
+          const b = readOperand(st, ins.operands[1], note);
+          const r = b - a;
+          setNZ(st, r);
+          st.flags.C = toUnsigned(a) > toUnsigned(b);
+          const sd = toSigned(b) - toSigned(a);
+          st.flags.V = sd > 32767 || sd < -32768;
+          note.push(`flags N=${st.flags.N ? 1 : 0} Z=${st.flags.Z ? 1 : 0} C=${st.flags.C ? 1 : 0} V=${st.flags.V ? 1 : 0}`);
+          break;
+        }
+        case "TEST": {
+          const v = readOperand(st, ins.operands[0], note);
+          setNZ(st, v);
+          st.flags.C = false;
+          st.flags.V = false;
+          note.push(`flags N=${st.flags.N ? 1 : 0} Z=${st.flags.Z ? 1 : 0} C=0 V=0`);
+          break;
+        }
+        case "BRANCH": {
+          const targetOp = ins.operands[0];
+          if (targetOp.mode !== "direct") {
+            error = `Line ${ins.line}: BRANCH target must be a label`;
+            break;
+          }
+          const taken = ins.cond ? condTaken(st, ins.cond) : true;
+          if (taken) {
+            st.pc = toUnsigned(targetOp.value ?? 0);
+            jumped = true;
+            note.push(`branch taken → ${targetOp.expr}`);
+          } else {
+            note.push("branch not taken");
+          }
+          break;
+        }
+        case "HALT": {
+          st.halted = true;
+          note.push("halt");
+          break;
+        }
+      }
+      if (error)
+        st.halted = true;
+      steps++;
+      trace.push({
+        index: steps - 1,
+        line: ins.line,
+        pc: ins.addr,
+        text: ins.text,
+        note,
+        regs: st.regs.slice(),
+        flags: { ...st.flags },
+        memChanges,
+        pcAfter: st.pc
+      });
+      if (!jumped && st.pc >= MEM_SIZE)
+        st.halted = true;
+    }
+    if (!st.halted && steps >= maxSteps) {
+      error = `Execution stopped: instruction limit (${maxSteps}) reached — check for an infinite loop.`;
+    }
+    return {
+      trace,
+      finalRegs: st.regs.slice(),
+      finalFlags: { ...st.flags },
+      finalMem: st.mem.slice(),
+      halted: st.halted,
+      error,
+      stepsExecuted: steps
+    };
+  }
+  function sourceWithoutComments(s) {
+    return s.split(`
+`).map((l) => {
+      const i = l.search(/--|;/);
+      return i >= 0 ? l.slice(0, i) : l;
+    }).join(`
+`);
+  }
+  function tokenRegex(token) {
+    const esc = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (/^[A-Za-z0-9]+$/.test(token))
+      return new RegExp(`\\b${esc}\\b`, "i");
+    return new RegExp(esc.replace(/ /g, "\\s*"), "i");
+  }
+  function verify(source, program, run, checks, constraints) {
+    const results = [];
+    for (const c of checks) {
+      let actual = null;
+      if (c.kind === "reg") {
+        const m = c.target.toUpperCase().match(/^R([0-7])$/);
+        if (m)
+          actual = run.finalRegs[parseInt(m[1], 10)];
+      } else {
+        const addr = evalExpr(c.target, program.symbols);
+        if (addr !== null)
+          actual = run.finalMem[toUnsigned(addr) % MEM_SIZE];
+      }
+      const pass = actual !== null && toUnsigned(actual) === toUnsigned(c.value);
+      results.push({
+        desc: c.desc,
+        expected: String(c.value),
+        actual: actual === null ? "—" : String(toSigned(actual)),
+        pass,
+        hint: c.hint
+      });
+    }
+    const constraintResults = [];
+    if (constraints) {
+      const code = sourceWithoutComments(source);
+      if (constraints.banned) {
+        for (const b of constraints.banned) {
+          const bad = tokenRegex(b.token).test(code);
+          constraintResults.push({
+            desc: `Must NOT use "${b.token}"`,
+            expected: "not used",
+            actual: bad ? "used ✗" : "not used",
+            pass: !bad,
+            hint: b.reason
+          });
+        }
+      }
+      if (constraints.required) {
+        for (const r of constraints.required) {
+          const ok = tokenRegex(r.token).test(code);
+          constraintResults.push({
+            desc: `Must use "${r.token}"`,
+            expected: "used",
+            actual: ok ? "used" : "missing ✗",
+            pass: ok,
+            hint: r.reason
+          });
+        }
+      }
+      if (constraints.maxSteps !== undefined) {
+        const ok = run.stepsExecuted <= constraints.maxSteps;
+        constraintResults.push({
+          desc: `Finishes within ${constraints.maxSteps} executed instructions`,
+          expected: `≤ ${constraints.maxSteps}`,
+          actual: String(run.stepsExecuted),
+          pass: ok,
+          hint: "Use a loop instead of repeating the same code by hand."
+        });
+      }
+    }
+    const allPass = results.every((r) => r.pass) && constraintResults.every((r) => r.pass) && !run.error;
+    return { results, constraintResults, allPass };
+  }
+  function runAndVerify(source, checks, constraints) {
+    const program = assemble(source);
+    if (program.errors.length > 0)
+      return { errors: program.errors };
+    const run = runProgram(program);
+    const verification = verify(source, program, run, checks, constraints);
+    return { errors: [], outcome: { program, run, verification } };
+  }
+  return exports;
+})(window.AsmEngine || (window.AsmEngine = {}));
+</script>
+<script>
+window.__ASM_DATA__ = {"examples":[{"id":"ex-sum-mem","unit":3,"difficulty":"basic","title":"Compute C = A + B (memory variables)","topic":"ALU operation through instructions","statement":"Two numbers A and B live in memory. Load them into registers, add them with the ALU, and store the result into C. This is the 'Hello World' of instruction execution — it shows the fetch–execute cycle doing exactly what Unit 4 describes: transfer → ALU operation → write-back.","code":"        ORG    0\n        Load   A, R0         -- R0 ← [A]        (read first operand)\n        Load   B, R1         -- R1 ← [B]        (read second operand)\n        Add    R0, R1        -- R1 ← R1 + R0    (ALU fires, dest is LAST)\n        Store  R1, C         -- [C] ← R1        (write result back)\n        Halt                 -- stop the processor\n\nA:      DATAWORD 18           -- data section\nB:      DATAWORD 24\nC:      DATAWORD 0","explanation":["Destination-last convention: `Add R0, R1` means R1 ← R1 + R0. Reading it backwards trips up most beginners.","Memory→register→ALU→memory is exactly the execution sequence of `Add (R3), R1` shown in Unit 4 slides.","Load and Move are the same operation here; Load just emphasises 'from memory'.","Halt is optional — running past the last instruction also stops — but writing it is good style."],"concepts":["Load/Store","direct addressing","dest-last"],"checks":[{"kind":"mem","target":"C","value":42,"desc":"Memory C = 18 + 24"},{"kind":"reg","target":"R1","value":42,"desc":"Register R1 holds the sum"}]},{"id":"ex-mul10-shift","unit":3,"difficulty":"basic","title":"Multiply by 10 using only shifts and adds","topic":"Shift-and-add multiplication (Unit 3)","statement":"Multiplication hardware is just adds plus shifts (that is the whole idea of Unit 3's shift-and-add algorithm). Compute Y = 10 × X without any multiply instruction, using x·10 = 8x + 2x.","code":"        ORG    0\n        Load   X, R0         -- R0 = X\n        Move   R0, R1        -- R1 = X          (working copy)\n        Shl    R0, #3        -- R0 = 8X         (shift left 3 = ×8)\n        Shl    R1, #1        -- R1 = 2X         (shift left 1 = ×2)\n        Add    R1, R0        -- R0 = 8X + 2X = 10X\n        Store  R0, Y\n        Halt\n\nX:      DATAWORD 7\nY:      DATAWORD 0","explanation":["A left shift by n multiplies by 2ⁿ — the software view of the barrel shifter feeding the ALU.","Because shifts are almost free (1 clock), compilers replace ×10 by two shifts and one add.","Trace it: 7 → 8×7=56 and 2×7=14 → 56+14=70. Verify in the machine panel after Run."],"concepts":["Shl","shift-and-add","strength reduction"],"checks":[{"kind":"mem","target":"Y","value":70,"desc":"Memory Y = 10 × 7"}]},{"id":"ex-demorgan","unit":3,"difficulty":"medium","title":"Prove De Morgan's law on the machine","topic":"Logic operations (Unit 3)","statement":"Unit 3 says ¬(A·B) = ¬A + ¬B. Don't take the algebra's word for it — compute both sides with AND/OR/NOT instructions and branch to SAME only when they are equal. R5 = 1 proves the identity for the chosen inputs.","code":"-- De Morgan check:  NOT(A AND B)  ==  (NOT A) OR (NOT B)\n        ORG    0\n        Load   A, R0\n        Load   B, R1\n        And    R1, R0        -- R0 = A AND B\n        Not    R0            -- R0 = NOT(A AND B)     left side\n\n        Load   A, R3\n        Load   B, R4\n        Not    R3            -- R3 = NOT A\n        Not    R4            -- R4 = NOT B\n        Or     R4, R3        -- R3 = (NOT A) OR (NOT B)   right side\n\n        Compare R3, R0       -- flags set on R0 - R3\n        Branch=0 SAME        -- equal? then identity holds\n        Move   #0, R5        -- 0 = sides differ\n        Halt\nSAME:   Move   #1, R5        -- 1 = sides identical\n        Halt\n\nA:      DATAWORD 0b1100\nB:      DATAWORD 0b1010","explanation":["AND masks bits, OR merges bits, NOT flips every bit of the 16-bit word.","`Compare R3, R0` sets flags on R0 − R3 (dst − src). Branch=0 tests the Z flag produced.","For A=1100, B=1010: A·B=1000, ¬(A·B)=…11110111 and ¬A+¬B = …0011+…0101 = …0111. Equal → Z=1.","This two-sided-compare trick is exactly how a compiler verifies algebraic identities at runtime."],"concepts":["And/Or/Not","Compare","Branch=0","De Morgan"],"checks":[{"kind":"reg","target":"R5","value":1,"desc":"R5 = 1 → both sides match"},{"kind":"reg","target":"R0","value":65527,"desc":"R0 = NOT(0b1100 AND 0b1010) = 0xFFF7"}]},{"id":"ex-ieee-pack","unit":3,"difficulty":"medium","title":"Pack an IEEE-754 style exponent field","topic":"Floating point (Unit 3)","statement":"A mini floating-point packer: given a raw exponent, add the bias 127 (as in IEEE 754 single precision), shift the biased exponent into its field position, and OR the mantissa bits into the low end. This is bit-field assembly at the heart of every float unit.","code":"-- Layout:  [ unused 7 | exponent 8 | mantissa 4 ]  (simplified)\n        ORG    0\n        Load   EXP, R0\n        Add    #127, R0      -- add the bias:  E' = E + 127\n        Shl    R0, #4        -- slide into exponent field (4 mantissa bits below)\n        Load   MANT, R1\n        Or     R1, R0        -- OR mantissa into the low 4 bits\n        Store  R0, FLOAT\n        Halt\n\nEXP:    DATAWORD 3            -- raw exponent\nMANT:   DATAWORD 0b1010       -- 4-bit mantissa\nFLOAT:  DATAWORD 0","explanation":["Bias 127 is stored instead of a signed exponent so that exponents sort correctly as unsigned numbers (Unit 3's IEEE 754 slide).","Shl by 4 puts the biased exponent at bits 4–11, leaving room for the 4-bit mantissa below.","OR is used to merge bit fields; ADD would carry into the exponent if the mantissa overflowed.","Expected: (3+127) = 130 → 130×16 = 2080 → OR 1010₂(=10) → 2090."],"concepts":["bias 127","Shl","Or","bit packing"],"checks":[{"kind":"mem","target":"FLOAT","value":2090,"desc":"FLOAT = (3+127)<<4 | 0b1010"}]},{"id":"ex-list-sum","unit":4,"difficulty":"basic","title":"Sum a list with a pointer + autoincrement","topic":"Addressing modes & loops (Unit 4)","statement":"The canonical Unit 4 loop: keep a pointer R0 at the current element, add each element to an accumulator, and let the autoincrement mode (R0)+ advance the pointer as a free side-effect of the add. Decrement the counter and branch while it is still positive.","code":"        ORG    0\n        Move   #LIST, R0     -- R0 = address of LIST (immediate label!)\n        Load   N, R1         -- R1 = counter\n        Clear  R2            -- R2 = running sum\nLOOP:   Add    (R0)+, R2     -- R2 ← R2 + [R0], THEN R0 ← R0 + 1\n        Decrement R1         -- sets Z when counter hits 0\n        Branch>0 LOOP        -- repeat while counter > 0\n        Store  R2, SUM\n        Halt\n\nN:      DATAWORD 6\nLIST:   DATAWORD 5, -3, 12, 8, -1, 4\nSUM:    DATAWORD 0","explanation":["`#LIST` is an immediate whose value is the address of LIST — this is how pointers are born.","`(R0)+` reads the element first, then bumps R0 by one word. One instruction = fetch + pointer update.","Decrement sets N and Z; Branch>0 looks at them (signed test: Z=0 and N=V). Loop runs exactly N times.","Sum = 5−3+12+8−1+4 = 25. Watch R0 climb from LIST to LIST+6 in the execution log."],"concepts":["(R0)+","#LABEL","Decrement","Branch>0"],"checks":[{"kind":"mem","target":"SUM","value":25,"desc":"SUM = 5-3+12+8-1+4"}]},{"id":"ex-larger","unit":4,"difficulty":"basic","title":"Find the larger of two numbers","topic":"Compare + conditional branch (Unit 4)","statement":"Condition codes in action: load both numbers, compare them, and let a single conditional branch pick the path. This if-else pattern is the seed of every selection statement a compiler emits.","code":"        ORG    0\n        Load   A, R0\n        Load   B, R1\n        Compare R0, R1       -- flags on R1 - R0   (dst - src!)\n        Branch>=0 TAKE_B     -- B >= A  →  B wins (or tie)\n        Store  R0, BIG       -- otherwise A is bigger\n        Halt\nTAKE_B: Store  R1, BIG\n        Halt\n\nA:      DATAWORD 34\nB:      DATAWORD -9\nBIG:    DATAWORD 0","explanation":["`Compare R0, R1` computes R1 − R0 in the flags only — no register is modified.","Branch≥0 uses the signed test N = V, so negatives compare correctly (try A=−9, B=−3 mentally).","Two stores + two Halts implement the two arms of the if-else — an assembly if has no braces, just paths."],"concepts":["Compare","Branch>=0","signed flags"],"checks":[{"kind":"mem","target":"BIG","value":34,"desc":"BIG = max(34, -9)"}]},{"id":"ex-count-pos","unit":4,"difficulty":"medium","title":"Count the positive elements of a list","topic":"Branching inside a scan loop (Unit 4)","statement":"Combine a scan loop with a decision: walk the list with a manually advanced pointer, test each element against zero using Compare on a memory operand, and skip the increment when the element is not positive.","code":"        ORG    0\n        Move   #LIST, R0     -- pointer\n        Load   N, R1         -- counter\n        Clear  R2            -- positive count\nLOOP:   Compare #0, (R0)     -- flags on [R0] - 0   (memory operand!)\n        Branch<=0 SKIP       -- zero or negative → don't count\n        Increment R2\nSKIP:   Add    #1, R0        -- advance pointer by hand this time\n        Decrement R1\n        Branch>0 LOOP\n        Store  R2, COUNT\n        Halt\n\nN:      DATAWORD 7\nLIST:   DATAWORD 4, -2, 0, 9, -7, 3, 1\nCOUNT:  DATAWORD 0","explanation":["`Compare #0, (R0)` shows that Compare accepts memory operands — flags come from [R0] − 0.","Branch≤0 is 'element ≤ 0', i.e. skip counting; the label SKIP names the else-path.","Here the pointer is advanced with `Add #1, R0` instead of (R0)+ — because the Compare must NOT consume the pointer, the bump is done separately after the decision.","Positives are 4, 9, 3, 1 → COUNT = 4 (note: 0 is not counted)."],"concepts":["Compare on (R0)","Branch<=0","skip pattern"],"checks":[{"kind":"mem","target":"COUNT","value":4,"desc":"COUNT = number of elements > 0"}]},{"id":"ex-swap","unit":4,"difficulty":"basic","title":"Swap two memory words via registers","topic":"Register transfers (Unit 4)","statement":"Memory cannot talk to memory directly — everything moves through registers. Swap the contents of X and Y using two registers as a staging area. This is the register-transfer view Unit 4 opens with.","code":"        ORG    0\n        Load   X, R0         -- R0 = old X\n        Load   Y, R1         -- R1 = old Y\n        Store  R0, Y         -- Y = old X\n        Store  R1, X         -- X = old Y\n        Halt\n\nX:      DATAWORD 11\nY:      DATAWORD 99","explanation":["There is no memory-to-memory Move: one operand of any transfer must ride through a register.","Order matters — storing over Y before copying it would lose 99 forever. Registers are the safety net.","The same three-step dance (read both, write both crossed) is what a compiler generates for `swap(x,y)`."],"concepts":["Load/Store","no mem-to-mem","ordering"],"checks":[{"kind":"mem","target":"X","value":99,"desc":"X now holds 99"},{"kind":"mem","target":"Y","value":11,"desc":"Y now holds 11"}]},{"id":"ex-factorial","unit":4,"difficulty":"medium","title":"Factorial with a running product loop","topic":"Arithmetic loop with Mul (Unit 3+4)","statement":"Compute N! = 1×2×3×…×N using a countdown loop: multiply the accumulator by the current counter, then decrement. Watch how the product grows in R1 step by step in the execution log.","code":"        ORG    0\n        Load   N, R0         -- R0 = N (counts down)\n        Move   #1, R1        -- R1 = product, starts at 1\nLOOP:   Mul    R0, R1        -- R1 ← R1 × R0\n        Decrement R0         -- N, N-1, ..., 1\n        Branch>0 LOOP        -- still numbers left?\n        Store  R1, FACT\n        Halt\n\nN:      DATAWORD 5\nFACT:   DATAWORD 0","explanation":["Mul R0, R1 keeps the product in R1 — destination-last again: R1 ← R1 × R0.","The loop body runs N times; the trace shows 1×5=5, 5×4=20, 20×3=60, 60×2=120, then R0 hits 0 and Branch>0 fails.","5! = 120 fits in 16 bits, but 9! = 362880 does not — a nice reminder that word size bounds arithmetic (V flag would set)."],"concepts":["Mul","countdown loop","word-size limits"],"checks":[{"kind":"mem","target":"FACT","value":120,"desc":"FACT = 5!"}]},{"id":"ex-copy-back","unit":4,"difficulty":"medium","title":"Copy a block backwards with autodecrement","topic":"-(R1) addressing (Unit 4)","statement":"Point both pointers just past the ends of the source and destination blocks, then let the autodecrement mode -(R1) walk them backwards word by word. Copying high-to-low is exactly how block moves avoid overwriting their own source.","code":"        ORG    0\n        Move   #SRC+5, R0    -- one word PAST the last source word\n        Move   #DST+5, R1    -- one word PAST the last destination word\n        Load   N, R2         -- word count\nLOOP:   Load   -(R0), R3     -- R0 ← R0-1 first, then R3 ← [R0]\n        Store  R3, -(R1)     -- R1 ← R1-1 first, then [R1] ← R3\n        Decrement R2\n        Branch>0 LOOP\n        Halt\n\nN:      DATAWORD 5\nSRC:    DATAWORD 10, 20, 30, 40, 50\nDST:    DATAWORD 0, 0, 0, 0, 0","explanation":["#SRC+5 uses label arithmetic — expressions like LABEL+const are allowed everywhere a value is expected.","`-(R0)` decrements BEFORE reading, so starting past-the-end lands exactly on the last word. #SRC+4 would start one short.","After the loop R0 = SRC and R1 = DST: the pointers came home. Inspect the memory table to see DST filled with 10..50."],"concepts":["-(R1)","#LABEL+5","block copy"],"checks":[{"kind":"mem","target":"DST","value":10,"desc":"DST[0] = 10"},{"kind":"mem","target":"DST+4","value":50,"desc":"DST[4] = 50"}]}],"problems":[{"id":"p-sub-mem","unit":3,"difficulty":"basic","title":"Subtraction with memory variables","topic":"ALU operations","statement":"Compute D = A − B using the registers as a staging area. Load both operands from memory, subtract with the ALU, and write the result back to memory cell D.","requirements":["D must contain A − B = 30 − 12 = 18 when the program halts."],"starter":"        ORG    0\n        -- TODO: load A into R0\n        -- TODO: load B into R1\n        -- TODO: subtract  (careful with the operand order!)\n        -- TODO: store R0 into D\n        Halt\n\nA:      DATAWORD 30\nB:      DATAWORD 12\nD:      DATAWORD 0","solution":"        ORG    0\n        Load   A, R0         -- R0 = A\n        Load   B, R1         -- R1 = B\n        Sub    R1, R0        -- R0 = R0 - R1 = A - B   (dest is LAST)\n        Store  R0, D         -- [D] = result\n        Halt\n\nA:      DATAWORD 30\nB:      DATAWORD 12\nD:      DATAWORD 0","solutionNotes":["`Sub R1, R0` means R0 ← R0 − R1. Writing `Sub R0, R1` would compute B − A = −18 instead.","Destination-last is the iron rule of this ISA: `OP src, dst`."],"checks":[{"kind":"mem","target":"D","value":18,"desc":"D = 30 − 12","hint":"Sub src, dst computes dst ← dst − src."},{"kind":"reg","target":"R0","value":18,"desc":"R0 still holds the result"}]},{"id":"p-rotate","unit":3,"difficulty":"basic","title":"Rotate three memory cells","topic":"Register transfers","statement":"Memory cannot copy memory-to-memory, so a rotation needs registers. Move values one step around a ring: what is in X goes to Y, what is in Y goes to Z, and what is in Z goes to X. Starting values 1, 2, 3 must become X=3, Y=1, Z=2.","requirements":["X = 3, Y = 1, Z = 2 after the program halts.","Do not change the data section."],"starter":"        ORG    0\n        -- TODO: stage X, Y, Z into R0, R1, R2\n        -- TODO: write them back rotated\n        Halt\n\nX:      DATAWORD 1\nY:      DATAWORD 2\nZ:      DATAWORD 3","solution":"        ORG    0\n        Load   X, R0         -- R0 = old X\n        Load   Y, R1         -- R1 = old Y\n        Load   Z, R2         -- R2 = old Z\n        Store  R2, X         -- X = old Z\n        Store  R0, Y         -- Y = old X\n        Store  R1, Z         -- Z = old Y\n        Halt\n\nX:      DATAWORD 1\nY:      DATAWORD 2\nZ:      DATAWORD 3","solutionNotes":["Read all three BEFORE writing any — otherwise you overwrite a value you still need.","The write-back order is crossed: X←R2, Y←R0, Z←R1."],"checks":[{"kind":"mem","target":"X","value":3,"desc":"X = old Z (3)"},{"kind":"mem","target":"Y","value":1,"desc":"Y = old X (1)"},{"kind":"mem","target":"Z","value":2,"desc":"Z = old Y (2)"}]},{"id":"p-times6","unit":3,"difficulty":"medium","title":"Multiply NUM by 6 — shifts only","topic":"Shift-and-add multiplication","statement":"Compute RESULT = 6 × NUM without any multiply instruction. Use the decomposition 6x = 4x + 2x with left shifts. NUM = 9, so RESULT must become 54.","requirements":["RESULT = 54.","The multiply instruction MUL is forbidden."],"starter":"        ORG    0\n        Load   NUM, R0\n        Move   R0, R1        -- working copy for the second shift\n        -- TODO: R0 = 4 * NUM   (one shift)\n        -- TODO: R1 = 2 * NUM   (one shift)\n        -- TODO: add them and store into RESULT\n        Halt\n\nNUM:    DATAWORD 9\nRESULT: DATAWORD 0","solution":"        ORG    0\n        Load   NUM, R0\n        Move   R0, R1\n        Shl    R0, #2        -- R0 = 4x\n        Shl    R1, #1        -- R1 = 2x\n        Add    R1, R0        -- R0 = 6x\n        Store  R0, RESULT\n        Halt\n\nNUM:    DATAWORD 9\nRESULT: DATAWORD 0","solutionNotes":["Shl by #2 is ×4, Shl by #1 is ×2 — shifting is multiplication by powers of two.","The Move first keeps two independent copies to shift by different amounts."],"checks":[{"kind":"mem","target":"RESULT","value":54,"desc":"RESULT = 6 × 9"}],"constraints":{"banned":[{"token":"MUL","reason":"Build ×6 from shifts and one add — that is the point of the exercise."}]}},{"id":"p-popcount","unit":3,"difficulty":"medium","title":"Bit census — count the 1-bits","topic":"Logic ops + shifts","statement":"Count how many 1-bits WORD contains and leave the answer in R5. WORD = 0b11010110, so R5 must end as 5. Test the lowest bit with AND #1, then shift right until the value becomes zero.","requirements":["R5 = number of 1-bits (should be 5).","The program must stop (no infinite loop)."],"starter":"        ORG    0\n        Load   WORD, R0\n        Clear  R5            -- the count\nLOOP:   -- TODO: exit when R0 == 0        (Compare + Branch=0)\n        -- TODO: copy R0 to R1 and isolate bit 0   (And #1)\n        -- TODO: if bit was 1, Increment R5\n        -- TODO: shift R0 right by 1\n        -- TODO: jump back to LOOP\n        Halt\n\nWORD:   DATAWORD 0b11010110","solution":"        ORG    0\n        Load   WORD, R0\n        Clear  R5\nLOOP:   Compare #0, R0       -- flags on R0 - 0\n        Branch=0 DONE        -- value exhausted\n        Move   R0, R1\n        And    #1, R1        -- R1 = lowest bit\n        Test   R1            -- Z=1 when bit was 0\n        Branch=0 SKIP\n        Increment R5         -- count this 1-bit\nSKIP:   Shr    R0, #1        -- next bit becomes lowest\n        Branch LOOP\nDONE:   Halt\n\nWORD:   DATAWORD 0b11010110","solutionNotes":["And #1 keeps only bit 0; Test sets Z from the result, so Branch=0 detects a zero bit.","Shr pushes bits off the right edge; when the word reaches 0, every 1-bit has been seen.","The unconditional Branch LOOP closes the while-loop; the Compare at the top is the exit test."],"checks":[{"kind":"reg","target":"R5","value":5,"desc":"R5 = 5 one-bits in 0b11010110"}],"constraints":{"banned":[{"token":"MUL","reason":"Counting bits needs only logic ops and shifts."}],"maxSteps":150}},{"id":"p-repadd","unit":3,"difficulty":"medium","title":"Repeated-addition multiplier","topic":"Loops implement multiplication","statement":"Multiplication is repeated addition. Compute PRODUCT = M × N by adding M to an accumulator exactly N times. M = 7, N = 5 → PRODUCT = 35. Neither MUL nor SHL is allowed.","requirements":["PRODUCT = 35.","Use a loop — do not write Add seven times.","No MUL, no SHL."],"starter":"        ORG    0\n        Load   M, R0         -- the addend\n        Load   N, R1         -- the counter\n        Clear  R2            -- accumulator\nLOOP:   -- TODO: add M into the accumulator\n        -- TODO: decrement the counter\n        -- TODO: repeat while counter > 0\n        -- TODO: store accumulator into PRODUCT\n        Halt\n\nM:      DATAWORD 7\nN:      DATAWORD 5\nPRODUCT: DATAWORD 0","solution":"        ORG    0\n        Load   M, R0\n        Load   N, R1\n        Clear  R2\nLOOP:   Add    R0, R2        -- R2 += M\n        Decrement R1\n        Branch>0 LOOP\n        Store  R2, PRODUCT\n        Halt\n\nM:      DATAWORD 7\nN:      DATAWORD 5\nPRODUCT: DATAWORD 0","solutionNotes":["The loop body is three instructions: Add, Decrement, Branch>0 — run five times.","Decrement sets Z/N and Branch>0 keeps looping until the counter reaches 0.","This is literally how early multiplication routines worked before dedicated multipliers existed."],"checks":[{"kind":"mem","target":"PRODUCT","value":35,"desc":"PRODUCT = 7 × 5"}],"constraints":{"banned":[{"token":"MUL","reason":"Repeated addition is the whole exercise."},{"token":"SHL","reason":"Shifts would be sneaky multiplication — not allowed here."}],"maxSteps":60}},{"id":"p-shiftadd-mul","unit":3,"difficulty":"hard","title":"Shift-and-add multiplier (Unit 3, in code)","topic":"Shift-and-add algorithm","statement":"Implement Unit 3's shift-and-add multiplication for a 4-bit multiplier. For each of 4 rounds: if the lowest bit of MULT is 1, add the current MULC into the product; then shift MULC left once and MULT right once. MULC = 0b1101 (13), MULT = 0b1011 (11) → PRODUCT must be 143.","requirements":["PRODUCT = 143.","Exactly 4 loop rounds (use a counter).","MUL is forbidden."],"starter":"        ORG    0\n        Load   MULC, R0      -- running multiplicand\n        Load   MULT, R1      -- running multiplier\n        Clear  R2            -- product accumulator\n        Move   #4, R3        -- round counter (4-bit multiplier)\nLOOP:   -- TODO: copy R1 to R4, isolate bit 0 with And #1\n        -- TODO: if bit is 1, add R0 into R2\n        -- TODO: Shl R0 by 1 ; Shr R1 by 1\n        -- TODO: Decrement R3 ; loop while > 0\n        -- TODO: store R2 into PRODUCT\n        Halt\n\nMULC:   DATAWORD 0b1101\nMULT:   DATAWORD 0b1011\nPRODUCT: DATAWORD 0","solution":"        ORG    0\n        Load   MULC, R0      -- multiplicand (will slide left)\n        Load   MULT, R1      -- multiplier  (will slide right)\n        Clear  R2\n        Move   #4, R3\nLOOP:   Move   R1, R4\n        And    #1, R4        -- lowest bit of multiplier\n        Test   R4            -- Z=0 → bit is 1\n        Branch=0 SKIPADD\n        Add    R0, R2        -- product += shifted multiplicand\nSKIPADD:Shl    R0, #1        -- multiplicand <<= 1\n        Shr    R1, #1        -- multiplier  >>= 1\n        Decrement R3\n        Branch>0 LOOP\n        Store  R2, PRODUCT\n        Halt\n\nMULC:   DATAWORD 0b1101\nMULT:   DATAWORD 0b1011\nPRODUCT: DATAWORD 0","solutionNotes":["Round-by-round: bits of 11 are 1,1,0,1 → adds 13, 26, skip, 104 → 143.","The two shifts per round are the hardware 'shift the partial product / shift the multiplier' from the Unit 3 datapath.","Test + Branch=0 is the idiomatic 'if bit is zero' — no Compare needed for a single register test."],"checks":[{"kind":"mem","target":"PRODUCT","value":143,"desc":"PRODUCT = 13 × 11"}],"constraints":{"banned":[{"token":"MUL","reason":"The algorithm replaces MUL with shifts and adds."}],"maxSteps":120}},{"id":"p-ieee-pack","unit":3,"difficulty":"hard","title":"Pack a full IEEE-754 style word","topic":"Floating-point bit layout","statement":"Pack the three IEEE 754 fields of a mini-float: WORD = SIGN<<15 | (EXP + 127)<<7 | MANT. SIGN = 1, EXP = 5 (so the biased exponent is 132), MANT = 0b1010101 (85). The final word must be 49749. Use shifts to position each field and OR to merge them.","requirements":["WORD = 1·2¹⁵ + 132·2⁷ + 85 = 49749.","Do not precompute the number — build it field by field."],"starter":"        ORG    0\n        -- TODO: R0 = SIGN shifted into bit 15\n        -- TODO: R1 = EXP + bias 127, then shifted to bits 7..14\n        -- TODO: OR the exponent into R0\n        -- TODO: OR the mantissa into R0\n        -- TODO: store R0 into WORD\n        Halt\n\nSIGN:   DATAWORD 1\nEXP:    DATAWORD 5\nMANT:   DATAWORD 0b1010101\nWORD:   DATAWORD 0","solution":"        ORG    0\n        Load   SIGN, R0\n        Shl    R0, #15       -- sign into the top bit\n        Load   EXP, R1\n        Add    #127, R1      -- biased exponent\n        Shl    R1, #7        -- into bits 7..14\n        Or     R1, R0        -- merge exponent field\n        Load   MANT, R2\n        Or     R2, R0        -- merge mantissa\n        Store  R0, WORD\n        Halt\n\nSIGN:   DATAWORD 1\nEXP:    DATAWORD 5\nMANT:   DATAWORD 0b1010101\nWORD:   DATAWORD 0","solutionNotes":["32768 (sign) + 132×128 = 16896 (exponent field) + 85 (mantissa) = 49749.","Shl R0, #15 moves the sign bit up; C=0 here because no 1-bit fell out.","OR never carries between fields, which is why it — not ADD — is the field-merge operator."],"checks":[{"kind":"mem","target":"WORD","value":49749,"desc":"WORD = SIGN<<15 | (5+127)<<7 | 85"}]},{"id":"p-indexed-sum","unit":4,"difficulty":"basic","title":"Sum with indexed addressing","topic":"Indexed mode LIST(R1)","statement":"Sum LIST[0..N−1] using the indexed addressing mode LIST(R1) with R1 as an index. LIST = 2, 4, 6, 8, 10 with N = 5, so the sum is 30. Autoincrement ( )+ is forbidden — practise explicit indexing and advancing the index yourself.","requirements":["SUM = 30.","Use LIST(R1) indexed addressing.","Autoincrement ' )+ ' is forbidden."],"starter":"        ORG    0\n        Clear  R1            -- index i = 0\n        Clear  R2            -- sum\nLOOP:   -- TODO: if i >= N, exit            (Compare N, R1 + Branch>=0)\n        -- TODO: add LIST(R1) into R2\n        -- TODO: i = i + 1\n        -- TODO: jump back to LOOP\nDONE:   -- TODO: store R2 into SUM\n        Halt\n\nN:      DATAWORD 5\nLIST:   DATAWORD 2, 4, 6, 8, 10\nSUM:    DATAWORD 0","solution":"        ORG    0\n        Clear  R1\n        Clear  R2\nLOOP:   Compare N, R1        -- flags on R1 - N   (i - N)\n        Branch>=0 DONE       -- i >= N → finished\n        Add    LIST(R1), R2  -- R2 += LIST[i]\n        Add    #1, R1        -- i++\n        Branch LOOP\nDONE:   Store  R2, SUM\n        Halt\n\nN:      DATAWORD 5\nLIST:   DATAWORD 2, 4, 6, 8, 10\nSUM:    DATAWORD 0","solutionNotes":["`Compare N, R1` sets flags on R1 − N (dst − src); Branch≥0 is the signed 'i ≥ N' test.","LIST(R1): the effective address is LIST + [R1] — the classic index mode from the Unit 4 table.","Compared to autoincrement, indexing costs one extra Add #1 but lets you reach LIST[i−1] or LIST[i+1] freely."],"checks":[{"kind":"mem","target":"SUM","value":30,"desc":"SUM = 2+4+6+8+10"}],"constraints":{"banned":[{"token":")+","reason":"This exercise is about explicit indexed addressing — advance the index yourself."}],"maxSteps":80}},{"id":"p-fill","unit":4,"difficulty":"basic","title":"Fill a buffer with a value","topic":"Indexed stores","statement":"Store VALUE (42) into all 6 cells of BUF using a loop and indexed stores BUF(R1). Buffers cleared before a computation is one of the most common housekeeping loops in real software.","requirements":["BUF[0..5] all equal 42.","Use a loop, not six Store instructions."],"starter":"        ORG    0\n        Load   VALUE, R0\n        Clear  R1            -- index\nLOOP:   -- TODO: stop when index reaches 6\n        -- TODO: store R0 into BUF(R1)\n        -- TODO: advance index; repeat\n        Halt\n\nVALUE:  DATAWORD 42\nBUF:    DATAWORD 0, 0, 0, 0, 0, 0","solution":"        ORG    0\n        Load   VALUE, R0\n        Clear  R1\nLOOP:   Compare #6, R1       -- flags on R1 - 6\n        Branch>=0 DONE\n        Store  R0, BUF(R1)   -- BUF[i] = 42\n        Add    #1, R1\n        Branch LOOP\nDONE:   Halt\n\nVALUE:  DATAWORD 42\nBUF:    DATAWORD 0, 0, 0, 0, 0, 0","solutionNotes":["Store R0, BUF(R1) shows a register value written THROUGH an indexed address.","Loop runs 6 times (i = 0..5); the Branch≥0 exits as soon as i hits 6."],"checks":[{"kind":"mem","target":"BUF","value":42,"desc":"BUF[0] = 42"},{"kind":"mem","target":"BUF+5","value":42,"desc":"BUF[5] = 42"}],"constraints":{"maxSteps":80}},{"id":"p-max","unit":4,"difficulty":"medium","title":"Find the maximum of a list","topic":"Scan loop + conditional update","statement":"The classic Unit 4 exercise: scan LIST (7 elements: −4, 9, −12, 25, 3, −8, 16) and store the largest element into MAX. Keep the current champion in a register and challenge it with every element.","requirements":["MAX = 25.","One pass through the list."],"starter":"        ORG    0\n        Move   #LIST, R0\n        Load   N, R1\n        Load   (R0)+, R2     -- first element is the first champion\n        Decrement R1         -- N-1 challengers left\nLOOP:   -- TODO: compare champion R2 with [R0]\n        -- TODO: if [R0] is larger, load it into R2\n        -- TODO: advance the pointer; decrement; loop while > 0\n        -- TODO: store champion into MAX\n        Halt\n\nN:      DATAWORD 7\nLIST:   DATAWORD -4, 9, -12, 25, 3, -8, 16\nMAX:    DATAWORD 0","solution":"        ORG    0\n        Move   #LIST, R0\n        Load   N, R1\n        Load   (R0)+, R2     -- champion = LIST[0], pointer advanced\n        Decrement R1\nLOOP:   Compare (R0), R2     -- flags on R2 - [R0]\n        Branch>=0 SKIP       -- champion survives\n        Load   (R0), R2      -- new champion\nSKIP:   Add    #1, R0\n        Decrement R1\n        Branch>0 LOOP\n        Store  R2, MAX\n        Halt\n\nN:      DATAWORD 7\nLIST:   DATAWORD -4, 9, -12, 25, 3, -8, 16\nMAX:    DATAWORD 0","solutionNotes":["Load (R0)+, R2 grabs element 0 AND advances the pointer in one instruction.","Compare (R0), R2 → flags on champion − challenger; Branch≥0 keeps the champion on ties too.","Signed comparison matters: the list starts negative, so unsigned flags would misfire — N=V logic handles −4 correctly."],"checks":[{"kind":"mem","target":"MAX","value":25,"desc":"MAX = largest element"}],"constraints":{"maxSteps":120}},{"id":"p-above-t","unit":4,"difficulty":"medium","title":"Count elements above a threshold","topic":"Compare against a variable","statement":"Count how many elements of LIST are strictly greater than the threshold T, and store the count in COUNT. LIST = 5, −3, 8, 0, 9, 1, 3, 2 with T = 3 → elements 5, 8, 9 qualify, so COUNT = 3.","requirements":["COUNT = 3.","Compare against the memory variable T, not the literal 3."],"starter":"        ORG    0\n        Move   #LIST, R0\n        Load   N, R1\n        Clear  R2\nLOOP:   -- TODO: compare [R0] with T\n        -- TODO: if element <= T, skip the increment\n        -- TODO: advance pointer; decrement counter; loop\n        -- TODO: store R2 into COUNT\n        Halt\n\nN:      DATAWORD 8\nT:      DATAWORD 3\nLIST:   DATAWORD 5, -3, 8, 0, 9, 1, 3, 2\nCOUNT:  DATAWORD 0","solution":"        ORG    0\n        Move   #LIST, R0\n        Load   N, R1\n        Clear  R2\nLOOP:   Compare T, (R0)      -- flags on [R0] - T\n        Branch<=0 SKIP       -- element <= T → don't count\n        Increment R2\nSKIP:   Add    #1, R0\n        Decrement R1\n        Branch>0 LOOP\n        Store  R2, COUNT\n        Halt\n\nN:      DATAWORD 8\nT:      DATAWORD 3\nLIST:   DATAWORD 5, -3, 8, 0, 9, 1, 3, 2\nCOUNT:  DATAWORD 0","solutionNotes":["Compare T, (R0) → flags on [R0] − T; Branch≤0 skips when the element is NOT strictly greater.","Note 3 itself is NOT counted — 'strictly greater' excludes equality, which Branch≤0 handles.","Both Compare operands are memory locations here: T direct, (R0) indirect."],"checks":[{"kind":"mem","target":"COUNT","value":3,"desc":"COUNT = #{elements > 3}"}],"constraints":{"maxSteps":120}},{"id":"p-triangular","unit":4,"difficulty":"medium","title":"Triangular number 1 + 2 + … + N","topic":"Countdown accumulation","statement":"Compute SUM = 1 + 2 + … + N for N = 10 (answer 55) with a countdown loop: add the counter into the accumulator, then decrement it, until it reaches zero.","requirements":["SUM = 55.","Loop, don't unroll."],"starter":"        ORG    0\n        Load   N, R0         -- counts down N, N-1, ..., 1\n        Clear  R1            -- accumulator\nLOOP:   -- TODO: add R0 into R1\n        -- TODO: decrement R0\n        -- TODO: repeat while R0 > 0\n        -- TODO: store R1 into SUM\n        Halt\n\nN:      DATAWORD 10\nSUM:    DATAWORD 0","solution":"        ORG    0\n        Load   N, R0\n        Clear  R1\nLOOP:   Add    R0, R1        -- R1 += R0\n        Decrement R0\n        Branch>0 LOOP\n        Store  R1, SUM\n        Halt\n\nN:      DATAWORD 10\nSUM:    DATAWORD 0","solutionNotes":["Adds 10, then 9, … then 1 — addition is commutative so order does not matter.","Exactly 3 instructions per round → 30 loop instructions for N=10; check 'steps executed' in the result panel."],"checks":[{"kind":"mem","target":"SUM","value":55,"desc":"SUM = 55"}],"constraints":{"maxSteps":80}},{"id":"p-reverse","unit":4,"difficulty":"hard","title":"Reverse a list in place","topic":"(R0)+ and -(R1) working together","statement":"Reverse LIST = 1,2,3,4,5,6 in place using two pointers: R0 walks forward with (R0)+, R1 walks backward with -(R1) starting just past the end. Swap the front and back elements 3 times and halt. In place means no second array.","requirements":["LIST becomes 6, 5, 4, 3, 2, 1.","Use (R0)+ for the forward pointer and -(R1) for the backward one.","No extra data array."],"starter":"        ORG    0\n        Move   #LIST, R0      -- forward  pointer (first element)\n        Move   #LIST+6, R1    -- backward pointer (one past the end)\n        Move   #3, R2         -- 6 elements → 3 swaps\nLOOP:   -- TODO: R3 = front element via (R0)+   (pointer advances)\n        -- TODO: R4 = back  element via -(R1)   (pointer retreats)\n        -- TODO: store R4 back at the front slot  (hint: -1(R0))\n        -- TODO: store R3 to (R1)\n        -- TODO: Decrement R2 ; loop while > 0\n        Halt\n\nLIST:   DATAWORD 1, 2, 3, 4, 5, 6","solution":"        ORG    0\n        Move   #LIST, R0\n        Move   #LIST+6, R1\n        Move   #3, R2\nLOOP:   Load   (R0)+, R3      -- R3 = LIST[i]; R0 → i+1\n        Load   -(R1), R4      -- R1 → j; R4 = LIST[j]\n        Store  R4, -1(R0)     -- LIST[i] = old LIST[j]\n        Store  R3, (R1)       -- LIST[j] = old LIST[i]\n        Decrement R2\n        Branch>0 LOOP\n        Halt\n\nLIST:   DATAWORD 1, 2, 3, 4, 5, 6","solutionNotes":["After Load (R0)+, R0 points one PAST the element just read — hence the -1(R0) offset to write it back.","-1(R0) is indexed addressing with a negative constant: effective address = [R0] − 1.","R0 and R1 meet in the middle after 3 swaps — pointers landing mid-list is the signature of an in-place reverse."],"checks":[{"kind":"mem","target":"LIST","value":6,"desc":"LIST[0] = 6"},{"kind":"mem","target":"LIST+1","value":5,"desc":"LIST[1] = 5"},{"kind":"mem","target":"LIST+2","value":4,"desc":"LIST[2] = 4"},{"kind":"mem","target":"LIST+3","value":3,"desc":"LIST[3] = 3"},{"kind":"mem","target":"LIST+4","value":2,"desc":"LIST[4] = 2"},{"kind":"mem","target":"LIST+5","value":1,"desc":"LIST[5] = 1"}],"constraints":{"required":[{"token":")+","reason":"The forward pointer should ride on autoincrement."},{"token":"-(","reason":"The backward pointer should ride on autodecrement."}],"maxSteps":80}},{"id":"p-scan-zero","unit":4,"difficulty":"medium","title":"Zero-terminated scan","topic":"Sentinel-controlled loop","statement":"LIST ends with a 0 sentinel (the C-string trick). Count the elements before the terminator into LEN. LIST = 8, −3, 5, −1, 2, 0, 99, 99 — the 99s must NOT be counted: stop at the first zero. LEN = 5.","requirements":["LEN = 5.","Stop at the first zero — do not scan the whole list."],"starter":"        ORG    0\n        Move   #LIST, R0\n        Clear  R1\nLOOP:   -- TODO: load element with (R0)+  (pointer advances for free)\n        -- TODO: if element == 0, leave the loop\n        -- TODO: Increment R1 ; jump back\nDONE:   -- TODO: store R1 into LEN\n        Halt\n\nLIST:   DATAWORD 8, -3, 5, -1, 2, 0, 99, 99\nLEN:    DATAWORD 0","solution":"        ORG    0\n        Move   #LIST, R0\n        Clear  R1\nLOOP:   Load   (R0)+, R2      -- read element, pointer advances\n        Compare #0, R2        -- flags on R2 - 0\n        Branch=0 DONE         -- sentinel found\n        Increment R1\n        Branch LOOP\nDONE:   Store  R1, LEN\n        Halt\n\nLIST:   DATAWORD 8, -3, 5, -1, 2, 0, 99, 99\nLEN:    DATAWORD 0","solutionNotes":["Sentinel loops have the exit test in the MIDDLE of the body — after loading, before counting.","(R0)+ advances past the sentinel too, so R0 ends pointing at the 99s: proof the scan stopped in time.","This is exactly how strlen walks a C string: elements are bytes there, words here."],"checks":[{"kind":"mem","target":"LEN","value":5,"desc":"LEN = 5 elements before the 0"}],"constraints":{"maxSteps":80}},{"id":"p-bubble","unit":4,"difficulty":"hard","title":"One bubble-sort pass","topic":"Nested compare/swap with indexes","statement":"Perform exactly one bubble pass over LIST (N = 6: 5, 2, 8, 1, 9, 3), moving left to right: for each i from 0 to N−2, if LIST[i] > LIST[i+1], swap the pair. Also count the swaps in R5. The list must end as 2, 5, 1, 8, 3, 9 with R5 = 3.","requirements":["LIST ends as 2, 5, 1, 8, 3, 9.","R5 = number of swaps (3).","One pass only — no full sort."],"starter":"        ORG    0\n        Move   #0, R1         -- i = 0\n        Load   N, R2\n        Decrement R2          -- N-1 adjacent pairs\n        Clear  R5             -- swap counter\nLOOP:   -- TODO: if i >= N-1, exit\n        -- TODO: R3 = LIST(i) ; R6 = i+1 ; R4 = LIST(R6)\n        -- TODO: if LIST(i) <= LIST(R6) skip the swap\n        -- TODO: store the two values crossed ; Increment R5\n        -- TODO: i++ ; repeat\n        Halt\n\nN:      DATAWORD 6\nLIST:   DATAWORD 5, 2, 8, 1, 9, 3","solution":"        ORG    0\n        Move   #0, R1         -- i = 0\n        Load   N, R2\n        Decrement R2          -- pairs: N-1\n        Clear  R5\nLOOP:   Compare R2, R1        -- flags on R1 - (N-1)\n        Branch>=0 DONE\n        Load   LIST(R1), R3   -- a = LIST[i]\n        Move   R1, R6\n        Add    #1, R6         -- R6 = i+1\n        Load   LIST(R6), R4   -- b = LIST[i+1]\n        Compare R4, R3        -- flags on a - b\n        Branch<=0 NOSWAP      -- already in order\n        Store  R4, LIST(R1)   -- LIST[i]   = b\n        Store  R3, LIST(R6)   -- LIST[i+1] = a\n        Increment R5\nNOSWAP: Add    #1, R1\n        Branch LOOP\nDONE:   Halt\n\nN:      DATAWORD 6\nLIST:   DATAWORD 5, 2, 8, 1, 9, 3","solutionNotes":["Two indexed reads, one signed Compare, one conditional branch — that is an entire if-swap in five instructions.","Compare R4, R3 sets flags on a − b; Branch≤0 skips when a ≤ b so equal neighbours are not swapped (stable).","One pass floats the 9 to the right end; a full sort just wraps this pass in an outer loop."],"checks":[{"kind":"mem","target":"LIST","value":2,"desc":"LIST[0] = 2"},{"kind":"mem","target":"LIST+1","value":5,"desc":"LIST[1] = 5"},{"kind":"mem","target":"LIST+2","value":1,"desc":"LIST[2] = 1"},{"kind":"mem","target":"LIST+3","value":8,"desc":"LIST[3] = 8"},{"kind":"mem","target":"LIST+4","value":3,"desc":"LIST[4] = 3"},{"kind":"mem","target":"LIST+5","value":9,"desc":"LIST[5] = 9"},{"kind":"reg","target":"R5","value":3,"desc":"R5 = 3 swaps"}],"constraints":{"maxSteps":150}}],"ref":{"dataMove":[{"mnemonic":"Move","format":"Move src, dst","effect":"dst ← [src]","flags":"unchanged"},{"mnemonic":"Load","format":"Load src, dst","effect":"same as Move (dst usually a register)","flags":"unchanged"},{"mnemonic":"Store","format":"Store reg, dst","effect":"[dst] ← [reg] — dst must be MEMORY","flags":"unchanged"},{"mnemonic":"Clear","format":"Clear dst","effect":"dst ← 0","flags":"unchanged"}],"arith":[{"mnemonic":"Add","format":"Add src, dst   /   Add a, b, dst","effect":"dst ← dst + src   /   dst ← a + b","flags":"N Z C V"},{"mnemonic":"Sub","format":"Sub src, dst   /   Sub a, b, dst","effect":"dst ← dst − src   /   dst ← a − b","flags":"N Z C V"},{"mnemonic":"Mul","format":"Mul src, dst","effect":"dst ← dst × src (low 16 bits)","flags":"N Z, V=overflow"},{"mnemonic":"Increment","format":"Increment dst","effect":"dst ← dst + 1","flags":"N Z only"},{"mnemonic":"Decrement","format":"Decrement dst","effect":"dst ← dst − 1","flags":"N Z only"},{"mnemonic":"Negate","format":"Negate dst","effect":"dst ← 0 − dst","flags":"N Z V"}],"logic":[{"mnemonic":"And","format":"And src, dst","effect":"dst ← dst AND src (bitwise)","flags":"N Z, C=V=0"},{"mnemonic":"Or","format":"Or src, dst","effect":"dst ← dst OR src","flags":"N Z, C=V=0"},{"mnemonic":"Xor","format":"Xor src, dst","effect":"dst ← dst XOR src","flags":"N Z, C=V=0"},{"mnemonic":"Not","format":"Not dst","effect":"dst ← NOT dst (every bit flipped)","flags":"N Z, C=V=0"},{"mnemonic":"Shl","format":"Shl dst, n","effect":"dst ← dst << n (×2ⁿ), last bit out → C","flags":"N Z C"},{"mnemonic":"Shr","format":"Shr dst, n","effect":"dst ← dst >> n (logical), last bit out → C","flags":"N Z C"},{"mnemonic":"Rol","format":"Rol dst, n","effect":"rotate left n bits","flags":"N Z C"},{"mnemonic":"Ror","format":"Ror dst, n","effect":"rotate right n bits","flags":"N Z C"}],"compare":[{"mnemonic":"Compare","format":"Compare a, b","effect":"flags on [b] − [a] (nothing stored!)","flags":"N Z C V"},{"mnemonic":"Test","format":"Test src","effect":"flags on [src] itself","flags":"N Z, C=V=0"},{"mnemonic":"Branch","format":"Branch LABEL","effect":"jump always","flags":"—"},{"mnemonic":"Branch>0","format":"Branch>0 LABEL","effect":"jump if greater than zero (signed)","flags":"reads N Z V"},{"mnemonic":"Branch≥0","format":"Branch>=0 LABEL","effect":"jump if ≥ 0 (signed)","flags":"reads N V"},{"mnemonic":"Branch<0","format":"Branch<0 LABEL","effect":"jump if < 0 (signed)","flags":"reads N V"},{"mnemonic":"Branch≤0","format":"Branch<=0 LABEL","effect":"jump if ≤ 0 (signed)","flags":"reads N Z V"},{"mnemonic":"Branch=0","format":"Branch=0 LABEL","effect":"jump if Z = 1","flags":"reads Z"},{"mnemonic":"Branch≠0","format":"Branch!=0 LABEL","effect":"jump if Z = 0","flags":"reads Z"},{"mnemonic":"Halt","format":"Halt","effect":"stop execution","flags":"—"}],"modes":[{"mode":"Register","syntax":"R3","ea":"—","example":"Add R1, R2","meaning":"operand is inside the register file"},{"mode":"Immediate","syntax":"#7   #LABEL","ea":"operand itself","example":"Move #LIST, R0","meaning":"constant value — or a constant ADDRESS when used as a pointer"},{"mode":"Absolute (direct)","syntax":"LABEL / 120","ea":"EA = LABEL","example":"Load A, R0","meaning":"the memory word at that address"},{"mode":"Register indirect","syntax":"(R1)","ea":"EA = [R1]","example":"Load (R1), R2","meaning":"R1 holds a pointer to the operand"},{"mode":"Autoincrement","syntax":"(R1)+","ea":"EA = [R1], then R1 += 1","example":"Add (R0)+, R2","meaning":"walk forward through an array"},{"mode":"Autodecrement","syntax":"-(R1)","ea":"R1 −= 1, then EA = [R1]","example":"Store R3, -(R1)","meaning":"walk backward through an array"},{"mode":"Indexed","syntax":"LABEL(R1) / 4(R1) / -1(R1)","ea":"EA = LABEL + [R1]","example":"Load LIST(R1), R2","meaning":"base + index — the array-access workhorse"}],"conds":[{"test":"Branch>0","taken":"Z = 0  and  N = V"},{"test":"Branch>=0","taken":"N = V"},{"test":"Branch<0","taken":"N ≠ V"},{"test":"Branch<=0","taken":"Z = 1  or  N ≠ V"},{"test":"Branch=0","taken":"Z = 1"},{"test":"Branch!=0","taken":"Z = 0"}],"flags":[{"test":"N (negative)","taken":"1 when the result's top bit is 1 (result interpreted signed is negative)"},{"test":"Z (zero)","taken":"1 when the result is exactly 0"},{"test":"C (carry)","taken":"Add: 1 on unsigned overflow past 65535 · Sub: 1 when unsigned borrow needed (a < b)"},{"test":"V (overflow)","taken":"1 when the SIGNED result doesn't fit in −32768…32767"}],"template":"        ORG    0            -- code starts at address 0\n        Move   #LIST, R0    -- your code ...\n        Halt\n\nN:      DATAWORD 6          -- data lives after the code\nLIST:   DATAWORD 5, -3, 12  -- several words, comma separated\nSUM:    DATAWORD 0          -- room for the answer","gotchas":[{"title":"Destination comes LAST","body":"Add R0, R1 means R1 ← R1 + R0. Read every two-operand instruction as OP src, dst. Writing the operands the other way round is the #1 source of wrong answers."},{"title":"Compare computes dst − src","body":"Compare A, B sets flags on [B] − [A]. So Compare T, (R0) followed by Branch<=0 tests 'element ≤ T'. Nothing is stored — only the four flags change."},{"title":"Move/Load/Store never touch flags","body":"If you need a branch after a Move, use Compare or Test first. Increment/Decrement set N and Z but leave C and V alone — handy for loop counters."},{"title":"Autoincrement/autodecrement act exactly once","body":"(R0)+ bumps AFTER the operand is used; -(R1) decrements BEFORE it is used. They fire whether the operand is read (src) or written (dst) — but only once per instruction."},{"title":"16-bit wrap-around","body":"Values live in −32768…32767 (or 0…65535 unsigned). 32767 + 1 wraps to −32768 and raises V. Factorials beyond 8! silently overflow — watch the V flag."},{"title":"Branches need labels","body":"A branch target must be a label defined somewhere in the program (code or data). Running past the last instruction halts the machine, but an explicit Halt is cleaner."}]}};
+</script>
+<script>
+/* Assembly Lab — static port. Vanilla JS, no dependencies. */
+(function () {
+  "use strict";
+
+  var DATA = window.__ASM_DATA__;
+  var E = window.AsmEngine;
+  var PROGRESS_KEY = "coa-asm-progress-v1";
+
+  /* ------------------------------ helpers ------------------------------- */
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* renderInline port: `code` spans */
+  function renderInline(text) {
+    var parts = String(text).split(/(`[^`]+`)/g);
+    var out = "";
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      if (p.length > 2 && p.charAt(0) === "`" && p.charAt(p.length - 1) === "`") {
+        out += "<code>" + esc(p.slice(1, -1)) + "</code>";
+      } else {
+        out += esc(p);
+      }
+    }
+    return out;
+  }
+
+  /* --------------------------- syntax highlight -------------------------- */
+
+  var MNEMONICS = {};
+  ["MOVE","MOV","LOAD","STORE","ADD","SUB","MUL","AND","OR","XOR","CLEAR","CLR","NOT","COMP",
+   "COMPLEMENT","NEGATE","NEG","INCREMENT","INC","DECREMENT","DEC","SHL","SHR","ROL","ROR",
+   "COMPARE","CMP","TEST","TST","BRANCH","BRA","BGT","BLT","BGE","BLE","BEQ","BNE","HALT",
+   "ORG","EQU","DATAWORD","WORD","DW",".WORD"].forEach(function (m) { MNEMONICS[m] = 1; });
+
+  function tokenizeLine(line) {
+    var toks = [];
+    var ci = line.search(/--|;/);
+    var code = ci >= 0 ? line.slice(0, ci) : line;
+    var comment = ci >= 0 ? line.slice(ci) : "";
+
+    var rest = code;
+    var lm = code.match(/^(\s*)([A-Za-z_][A-Za-z0-9_]*)(:)(\s*)/);
+    if (lm) {
+      toks.push([lm[1], ""]);
+      toks.push([lm[2] + ":", "t-lab"]);
+      toks.push([lm[4], ""]);
+      rest = code.slice(lm[0].length);
+    }
+    var mm = rest.match(/^(\s*)(\.?[A-Za-z_][A-Za-z0-9_.]*)([\s\S]*)$/);
+    if (mm) {
+      toks.push([mm[1], ""]);
+      var up = mm[2].toUpperCase();
+      toks.push([mm[2], MNEMONICS[up] ? "t-mne" : ""]);
+      rest = mm[3];
+    }
+    var om = rest.match(/^(\s*)([\s\S]*)$/);
+    if (om) {
+      toks.push([om[1], ""]);
+      var body = om[2];
+      var re = /(\(R[0-7]\)[+]?:?|-\(R[0-7]\)|\bR[0-7]\b|#-?\w+|0[bx][0-9a-fA-F]+|\b\d+\b|[A-Za-z_][A-Za-z0-9_]*|\s+|[^\sA-Za-z0-9_]+)/g;
+      var parts = body.match(re) || [body];
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (/^\(R[0-7]\)\+$|^-\(R[0-7]\)$|^\(R[0-7]\)$|^R[0-7]$/i.test(p)) toks.push([p, "t-reg"]);
+        else if (p.charAt(0) === "#") toks.push([p, "t-imm"]);
+        else if (/^0[bx]/i.test(p) || /^\d+$/.test(p)) toks.push([p, "t-num"]);
+        else if (/^[A-Za-z_]/.test(p)) toks.push([p, "t-sym"]);
+        else toks.push([p, ""]);
+      }
+    }
+    if (comment) toks.push([comment, "t-com"]);
+    return toks;
+  }
+
+  function codeBlock(code, opts) {
+    opts = opts || {};
+    var lines = code.split("\n");
+    var html = '<div class="codeblock"><pre>';
+    for (var i = 0; i < lines.length; i++) {
+      var n = i + 1;
+      var active = opts.activeLine === n;
+      html += '<div class="cl' + (active ? " active" : "") + '">';
+      if (opts.showLineNumbers !== false) {
+        html += '<span class="ln">' + n + "</span>";
+      }
+      html += '<span class="ws">';
+      var toks = tokenizeLine(lines[i]);
+      for (var j = 0; j < toks.length; j++) {
+        html += toks[j][1] ? '<span class="' + toks[j][1] + '">' + esc(toks[j][0]) + "</span>" : esc(toks[j][0]);
+      }
+      html += "</span></div>";
+    }
+    html += "</pre></div>";
+    return html;
+  }
+
+  /* ------------------------------ machine -------------------------------- */
+
+  function MachineCtl() {
+    this.outcome = null;
+    this.errors = [];
+    this.viewIdx = -1;
+    this.maxIdx = -1;
+  }
+
+  MachineCtl.prototype.run = function (code, checks, constraints) {
+    var r = E.runAndVerify(code, checks || [], constraints);
+    if (r.errors.length > 0) {
+      this.errors = r.errors;
+      this.outcome = null;
+      this.viewIdx = -1;
+      this.maxIdx = -1;
+      return null;
+    }
+    this.errors = [];
+    this.outcome = r.outcome;
+    this.viewIdx = r.outcome.run.trace.length - 1;
+    this.maxIdx = this.viewIdx;
+    return r.outcome;
+  };
+
+  MachineCtl.prototype.reset = function () {
+    this.outcome = null;
+    this.errors = [];
+    this.viewIdx = -1;
+    this.maxIdx = -1;
+  };
+
+  MachineCtl.prototype.view = function () {
+    if (!this.outcome) return null;
+    var program = this.outcome.program;
+    var r = this.outcome.run;
+    var n = r.trace.length;
+    var idx = Math.min(this.viewIdx, n - 1);
+    var regs = idx >= 0 ? r.trace[idx].regs.slice() : [0,0,0,0,0,0,0,0];
+    var flags = idx >= 0 ? { N: r.trace[idx].flags.N, Z: r.trace[idx].flags.Z, C: r.trace[idx].flags.C, V: r.trace[idx].flags.V }
+                         : { N: false, Z: false, C: false, V: false };
+    var mem = program.initMem.slice();
+    for (var i = 0; i <= idx; i++) {
+      var mcs = r.trace[i].memChanges;
+      for (var k = 0; k < mcs.length; k++) mem[mcs[k].addr] = mcs[k].after;
+    }
+    var changedRegs = {};
+    if (idx >= 0) {
+      var before = idx > 0 ? r.trace[idx - 1].regs : [0,0,0,0,0,0,0,0];
+      for (var q = 0; q < 8; q++) if (before[q] !== regs[q]) changedRegs[q] = 1;
+    }
+    var changedMem = {};
+    if (idx >= 0) {
+      var mcs2 = r.trace[idx].memChanges;
+      for (var w = 0; w < mcs2.length; w++) changedMem[mcs2[w].addr] = 1;
+    }
+    return {
+      regs: regs, flags: flags, mem: mem,
+      changedRegs: changedRegs, changedMem: changedMem,
+      pc: idx >= 0 ? r.trace[idx].pc : null,
+      idx: idx
+    };
+  };
+
+  /* -------- machine view HTML (with dynamic refresh on step) ------------- */
+
+  function machineViewHTML(ctl, dataCells) {
+    var v = ctl.view();
+    if (!v) {
+      return '<div class="machine off">Machine powered off — run the program to watch the registers and memory.</div>';
+    }
+    var rowMap = {};
+    var order = [];
+    function put(addr, label) {
+      if (!(addr in rowMap)) { rowMap[addr] = label; order.push(addr); }
+    }
+    for (var i = 0; i < dataCells.length; i++) put(dataCells[i].addr, dataCells[i].label);
+    for (var a in v.changedMem) if (!(a in rowMap)) put(+a, "@" + a);
+    order.sort(function (x, y) { return x - y; });
+    var rows = order.slice(0, 40);
+
+    var html = '<div class="machine">';
+    html += '<div class="mhead"><span class="mlab">CPU · registers</span>' +
+            '<span class="mpc">PC = ' + (v.pc === null ? "—" : v.pc) + "</span></div>";
+    html += '<div class="regs">';
+    for (var r = 0; r < 8; r++) {
+      var val = v.regs[r];
+      html += '<div class="regcell' + (v.changedRegs[r] ? " chg" : "") + '">' +
+        '<div class="rl">R' + r + "</div>" +
+        '<div class="rv">' + E.toSigned(val) + "</div>" +
+        '<div class="rh2">' + E.toHex(val) + "</div></div>";
+    }
+    html += "</div>";
+    html += '<div class="flagrow"><span class="mlab">flags</span>';
+    ["N", "Z", "C", "V"].forEach(function (f) {
+      html += '<span class="flag' + (v.flags[f] ? " on" : "") + '">' + f + "=" + (v.flags[f] ? 1 : 0) + "</span>";
+    });
+    html += "</div>";
+    html += '<div class="memlab">memory (data + touched cells)</div>';
+    if (rows.length === 0) {
+      html += '<div class="memnone">no data cells</div>';
+    } else {
+      html += '<div class="memrows">';
+      for (var m = 0; m < rows.length; m++) {
+        var addr = rows[m];
+        html += '<div class="memrow' + (v.changedMem[addr] ? " chg" : "") + '">' +
+          '<span class="ml">' + esc(rowMap[addr]) + "</span>" +
+          '<span class="ma">[' + addr + "]</span>" +
+          '<span class="mv">' + E.toSigned(v.mem[addr]) + "</span>" +
+          '<span class="mh">' + E.toHex(v.mem[addr]) + "</span></div>";
+      }
+      html += "</div>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function traceLogHTML(ctl) {
+    if (!ctl.outcome) return "";
+    var trace = ctl.outcome.run.trace;
+    var html = '<div class="tracelog">';
+    if (trace.length === 0) html += '<div class="trow-empty">nothing executed yet</div>';
+    for (var i = 0; i < trace.length; i++) {
+      var t = trace[i];
+      html += '<button type="button" class="trow' + (t.index === ctl.viewIdx ? " cur" : "") +
+        '" data-tidx="' + t.index + '">' +
+        '<span class="tn">#' + (t.index + 1) + "</span>" +
+        '<span class="tl">L' + t.line + "</span>" +
+        '<span class="tx">' + esc(t.text) + "</span>" +
+        '<span class="tnote">' + esc(t.note.join(" · ")) + "</span></button>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function verifyPanelHTML(ctl) {
+    if (!ctl.outcome) return "";
+    var run = ctl.outcome.run;
+    var ver = ctl.outcome.verification;
+    var rows = ver.results.concat(ver.constraintResults);
+    var html = "";
+    if (run.error) {
+      html += '<div class="warnbox">⚠ ' + esc(run.error) + "</div>";
+    }
+    if (rows.length > 0) {
+      html += '<div class="vrows">';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<div class="vrow ' + (r.pass ? "pass" : "fail") + '">' +
+          '<span class="mk">' + (r.pass ? "✓" : "✗") + "</span>" +
+          '<span class="vd">' + esc(r.desc) + "</span>" +
+          '<span class="vx">expected ' + esc(String(r.expected)) + " · got " + esc(String(r.actual)) + "</span>" +
+          (!r.pass && r.hint ? '<span class="vh">hint: ' + esc(r.hint) + "</span>" : "") +
+          "</div>";
+      }
+      html += "</div>";
+    }
+    html += '<div class="vmeta">executed ' + run.stepsExecuted + " instruction" +
+      (run.stepsExecuted === 1 ? "" : "s") + (run.halted && !run.error ? " · halted cleanly" : "") + "</div>";
+    return html;
+  }
+
+  function parseErrorHTML(ctl) {
+    if (ctl.errors.length === 0) return "";
+    var n = ctl.errors.length;
+    var html = '<div class="errpanel"><div class="eh">The assembler found ' + n +
+      " problem" + (n === 1 ? "" : "s") + '</div><ul>';
+    var shown = ctl.errors.slice(0, 8);
+    for (var i = 0; i < shown.length; i++) {
+      html += "<li>line " + shown[i].line + ": " + esc(shown[i].message) + "</li>";
+    }
+    html += "</ul></div>";
+    return html;
+  }
+
+  /* --------------------- card skeleton + step logic ---------------------- */
+
+  var cards = []; /* {ctl, root, dataCellsFn, activeLineEl?} */
+
+  function traceControlsHTML(label, hasRun, viewIdx, maxIdx) {
+    return '<div class="controls">' +
+      '<button type="button" class="btn primary act-run">▶ ' + label + "</button>" +
+      '<button type="button" class="btn act-start"' + (!hasRun || viewIdx < 0 ? " disabled" : "") + ">⏮ start</button>" +
+      '<button type="button" class="btn act-prev"' + (!hasRun || viewIdx < 0 ? " disabled" : "") + ">◀ back</button>" +
+      '<span class="steps">step ' + (viewIdx + 1) + " / " + (maxIdx + 1) + "</span>" +
+      '<button type="button" class="btn act-next"' + (!hasRun || viewIdx >= maxIdx ? " disabled" : "") + ">next ▶</button>" +
+      '<button type="button" class="btn act-end"' + (!hasRun || viewIdx >= maxIdx ? " disabled" : "") + ">end ⏭</button>" +
+      "</div>";
+  }
+
+  /* Wire a card container that contains: [data-panels], .act-run/.act-start/...
+     getCode() supplies the current source. runLabel is for the primary button. */
+  function wireMachine(root, ctl, getCode, opts) {
+    var panels = root.querySelector("[data-panels]");
+
+    function refresh() {
+      var hasRun = !!ctl.outcome;
+      var dataCells = ctl.outcome ? ctl.outcome.program.dataCells : opts.starterCells();
+      var html = parseErrorHTML(ctl);
+      if (ctl.outcome) {
+        if (opts.showVerify) html += verifyPanelHTML(ctl);
+        html += machineViewHTML(ctl, dataCells);
+        html += traceLogHTML(ctl);
+      } else if (!ctl.errors.length) {
+        html += '<div class="machine off">Machine powered off — run the program to watch the registers and memory.</div>';
+      }
+      panels.innerHTML = html;
+      /* trace row clicks */
+      var trows = panels.querySelectorAll(".trow");
+      for (var i = 0; i < trows.length; i++) {
+        trows[i].addEventListener("click", function (ev) {
+          ctl.viewIdx = parseInt(ev.currentTarget.getAttribute("data-tidx"), 10);
+          refresh();
+          syncActive();
+        });
+      }
+      var cur = panels.querySelector(".trow.cur");
+      if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
+      /* controls state */
+      var has = !!ctl.outcome;
+      var max = ctl.maxIdx;
+      var vi = Math.min(ctl.viewIdx, max);
+      function btn(sel, dis) {
+        var b = root.querySelector(sel);
+        if (b) b.disabled = dis;
+      }
+      btn(".act-start", !has || vi < 0);
+      btn(".act-prev", !has || vi < 0);
+      btn(".act-next", !has || vi >= max);
+      btn(".act-end", !has || vi >= max);
+      var st = root.querySelector(".steps");
+      if (st) st.textContent = "step " + (has ? vi + 1 : 0) + " / " + (has ? max + 1 : 0);
+    }
+
+    function syncActive() {
+      if (!opts.codeLineEl) return;
+      var line = null;
+      if (ctl.outcome && ctl.viewIdx >= 0 && ctl.viewIdx < ctl.outcome.run.trace.length) {
+        line = ctl.outcome.run.trace[ctl.viewIdx].line;
+      }
+      var rows = opts.codeLineEl.querySelectorAll(".cl");
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].classList.toggle("active", line === i + 1);
+      }
+    }
+
+    root.querySelector(".act-run").addEventListener("click", function () {
+      var oc = opts.onRun();
+      refresh();
+      syncActive();
+      return oc;
+    });
+    root.querySelector(".act-start").addEventListener("click", function () {
+      ctl.viewIdx = -1; refresh(); syncActive();
+    });
+    root.querySelector(".act-prev").addEventListener("click", function () {
+      ctl.viewIdx = Math.max(ctl.viewIdx - 1, -1); refresh(); syncActive();
+    });
+    root.querySelector(".act-next").addEventListener("click", function () {
+      ctl.viewIdx = Math.min(ctl.viewIdx + 1, ctl.maxIdx); refresh(); syncActive();
+    });
+    root.querySelector(".act-end").addEventListener("click", function () {
+      ctl.viewIdx = ctl.maxIdx; refresh(); syncActive();
+    });
+
+    refresh();
+    return { refreshNow: refresh, syncActive: syncActive };
+  }
+
+  /* ------------------------------- toasts -------------------------------- */
+
+  function toast(title, desc, ok) {
+    var host = document.getElementById("toasts");
+    var t = document.createElement("div");
+    t.className = "toast" + (ok ? "" : " bad");
+    t.innerHTML = '<div class="tt">' + esc(title) + "</div>" +
+      (desc ? '<div class="td2">' + esc(desc) + "</div>" : "");
+    host.appendChild(t);
+    setTimeout(function () { t.style.opacity = "0"; t.style.transition = "opacity .3s"; }, 2600);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3000);
+  }
+
+  /* ------------------------------ progress ------------------------------- */
+
+  var solved = [];
+  try {
+    var raw = window.localStorage.getItem(PROGRESS_KEY);
+    if (raw) solved = JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+
+  function markSolved(id) {
+    if (solved.indexOf(id) >= 0) return;
+    solved.push(id);
+    try { window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(solved)); } catch (e) { /* ignore */ }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    var count = 0;
+    for (var i = 0; i < DATA.problems.length; i++) {
+      if (solved.indexOf(DATA.problems[i].id) >= 0) count++;
+    }
+    var el = document.getElementById("solvedCount");
+    if (el) el.textContent = count + "/" + DATA.problems.length + " solved";
+    var bar = document.getElementById("progBar");
+    if (bar) bar.style.width = (count / DATA.problems.length) * 100 + "%";
+    return count;
+  }
+
+  /* ---------------------------- editor wiring ---------------------------- */
+
+  function wireEditor(ta, getVal, setVal) {
+    ta.value = getVal();
+    ta.addEventListener("input", function () { setVal(ta.value); });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var start = ta.selectionStart, end = ta.selectionEnd;
+        setVal(getVal().slice(0, start) + "    " + getVal().slice(end));
+        ta.value = getVal();
+        requestAnimationFrame(function () { ta.selectionStart = ta.selectionEnd = start + 4; });
+      }
+    });
+  }
+
+  /* ----------------------------- badges ---------------------------------- */
+
+  function unitBadge(u) { return '<span class="badge u' + u + '">UNIT ' + u + "</span>"; }
+  function diffBadge(d) { return '<span class="obadge ' + d + '">' + d + "</span>"; }
+
+  /* ============================ REFERENCE TAB ============================ */
+
+  function instTable(rows) {
+    var html = '<div class="tblwrap"><table class="inst"><thead><tr>' +
+      "<th>Mnemonic</th><th>Format</th><th>Effect</th><th>Flags</th></tr></thead><tbody>";
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      html += "<tr><td class=\"mne\">" + esc(r.mnemonic) + '</td><td class="fmt">' + esc(r.format) +
+        "</td><td>" + renderInline(r.effect) + '</td><td class="flg">' + esc(r.flags) + "</td></tr>";
+    }
+    return html + "</tbody></table></div>";
+  }
+
+  function refTab() {
+    var R = DATA.ref;
+    var html = '<div class="stack">';
+    html += '<div class="masthead"><h2>The COA-8 machine &amp; instruction set</h2>' +
+      "<p>Everything the Examples and Practice tabs use, on one page. The ISA follows the " +
+      "two-operand GPR style from the Unit 4 slides — registers R0–R7, destination last, " +
+      "the six addressing modes, and signed conditional branches driven by the N·Z·C·V " +
+      "flags. Words are 16 bits; memory holds 256 words.</p></div>";
+
+    html += '<div class="refcard"><p class="kick">machine model</p><h3>Registers, memory &amp; program structure</h3>' +
+      '<div class="refgrid g2"><div class="machtext">' +
+      "<p><b>8 registers</b> <code>R0…R7</code>, each holding one 16-bit word, plus the <b>program counter</b> and four <b>condition-code flags</b> N, Z, C, V.</p>" +
+      "<p><b>Memory</b>: 256 words, addressed 0–255. Code and data share one address space; <code>ORG n</code> sets where the next item lands.</p>" +
+      "<p><b>Data</b> is declared with <code>LABEL: DATAWORD v, v, …</code> (decimal, <code>0x</code> hex, <code>0b</code> binary, or a label expression like <code>LIST+2</code>). <code>LABEL EQU 12</code> names a constant.</p>" +
+      "<p>Comments start with <code>--</code> (or <code>;</code>). Every instruction occupies one word — a simplified teaching model.</p>" +
+      "</div><div>" + codeBlock(R.template, { showLineNumbers: false }) + "</div></div></div>";
+
+    html += '<div class="refcard"><p class="kick">data transfer</p><h3>Move / Load / Store / Clear</h3>' + instTable(R.dataMove) + "</div>";
+    html += '<div class="refcard"><p class="kick">arithmetic</p><h3>Add / Sub / Mul / counters</h3>' + instTable(R.arith) + "</div>";
+    html += '<div class="refcard"><p class="kick">logic &amp; shifts (unit 3)</p><h3>And / Or / Xor / Not / shifts</h3>' + instTable(R.logic) + "</div>";
+    html += '<div class="refcard"><p class="kick">control flow (unit 4)</p><h3>Compare, Test &amp; Branches</h3>' + instTable(R.compare) + "</div>";
+
+    /* modes */
+    var modes = '<div class="tblwrap"><table class="inst wide"><thead><tr>' +
+      "<th>Mode</th><th>Syntax</th><th>Effective address</th><th>Example</th><th>Use it for</th></tr></thead><tbody>";
+    for (var i = 0; i < R.modes.length; i++) {
+      var m = R.modes[i];
+      modes += '<tr><td style="font-weight:600;color:#22304a">' + esc(m.mode) + '</td><td class="syn">' +
+        esc(m.syntax) + '</td><td class="ea">' + esc(m.ea) + '</td><td class="exm">' + esc(m.example) +
+        "</td><td>" + esc(m.meaning) + "</td></tr>";
+    }
+    modes += "</tbody></table></div>";
+    html += '<div class="refcard"><p class="kick">unit 4</p><h3>The six addressing modes</h3>' + modes + "</div>";
+
+    /* conds + flags */
+    var cond = '<div class="tblwrap"><table class="inst" style="min-width:420px"><thead><tr>' +
+      "<th>Instruction</th><th>Branch is taken when</th></tr></thead><tbody>";
+    for (var c = 0; c < R.conds.length; c++) {
+      cond += '<tr><td class="mne">' + esc(R.conds[c].test) + '</td><td class="ea" style="white-space:normal">' +
+        esc(R.conds[c].taken) + "</td></tr>";
+    }
+    cond += "</tbody></table></div>";
+    var flags = '<div class="tblwrap"><table class="inst" style="min-width:0"><tbody>';
+    for (var f = 0; f < R.flags.length; f++) {
+      flags += '<tr><td class="syn" style="font-weight:700">' + esc(R.flags[f].test) +
+        '</td><td style="white-space:normal">' + esc(R.flags[f].taken) + "</td></tr>";
+    }
+    flags += "</tbody></table></div>";
+    html += '<div class="refcard"><p class="kick">unit 4</p><h3>Signed branch conditions &amp; the flags</h3>' +
+      '<div class="refgrid g2">' + cond + flags + "</div>" +
+      '<div class="notebox"><b>Why N vs V?</b> Signed comparisons need both: after <code>Compare R0, R1</code>, “R1 &lt; R0” is <code>N ≠ V</code> — this is exactly the branch-logic table from the Unit 4 condition-code slides.</div></div>';
+
+    /* gotchas */
+    var gots = '<div class="gotchas">';
+    for (var g = 0; g < R.gotchas.length; g++) {
+      gots += '<div class="gotcha"><div class="gt">' + esc(R.gotchas[g].title) + "</div><p>" +
+        renderInline(R.gotchas[g].body) + "</p></div>";
+    }
+    gots += "</div>";
+    html += '<div class="refcard"><p class="kick">read before debugging</p><h3>Six gotchas that cost marks</h3>' + gots + "</div>";
+
+    html += "</div>";
+    return html;
+  }
+
+  /* ============================ EXAMPLES TAB ============================= */
+
+  function exampleCard(ex) {
+    var ctl = new MachineCtl();
+    var starterCells = E.assemble(ex.code).dataCells;
+    var html = '<article class="card" data-exid="' + esc(ex.id) + '">' +
+      '<div class="brow">' + unitBadge(ex.unit) + diffBadge(ex.difficulty) + "<h3>" + esc(ex.title) + "</h3></div>" +
+      '<p class="kick">' + esc(ex.topic) + "</p>" +
+      '<p class="stmt">' + renderInline(ex.statement) + "</p>" +
+      '<div data-codeline>' + codeBlock(ex.code) + "</div>" +
+      '<div class="concepts">';
+      for (var i = 0; i < ex.concepts.length; i++) {
+        html += '<span class="cbadge">' + esc(ex.concepts[i]) + "</span>";
+      }
+    html += "</div>";
+    html += '<details class="plain"><summary>why it works</summary><div class="inner"><ul>';
+      for (var j = 0; j < ex.explanation.length; j++) {
+        html += "<li>" + renderInline(ex.explanation[j]) + "</li>";
+      }
+    html += "</ul></div></details>";
+    html += '<div data-controls>' + traceControlsHTML("Run example", false, -1, -1) + "</div>";
+    html += '<div data-panels></div>';
+    html += "</article>";
+
+    var root = document.createElement("div");
+    root.innerHTML = html;
+    var el = root.firstChild;
+    var codeLineEl = el.querySelector("[data-codeline]");
+    var wire = wireMachine(el, ctl,
+      function () { return ex.code; },
+      {
+        showVerify: true,
+        starterCells: function () { return starterCells; },
+        codeLineEl: codeLineEl,
+        onRun: function () { return ctl.run(ex.code, ex.checks); }
+      });
+    return el;
+  }
+
+  function examplesTab() {
+    cards = [];
+    var html = '<div class="stack">' +
+      '<div class="masthead"><h2>Worked examples — fully open</h2>' +
+      "<p>Ten complete programs, every line explained with a <code>--</code> statement. " +
+      "Hit <b>Run example</b> to see it execute, then walk it with <b>next ▶ / ◀ back</b> — " +
+      "the highlighted line, registers, flags and memory all move together. This is the best way " +
+      "to <i>see</i> Unit 3 arithmetic and Unit 4 addressing modes in action.</p></div>" +
+      '<div class="chips" data-exchips>' +
+      chipBtn("exUnit", 0, "all units", true) +
+      chipBtn("exUnit", 3, "unit 3 · arithmetic &amp; logic", false) +
+      chipBtn("exUnit", 4, "unit 4 · instructions &amp; modes", false) +
+      "</div>" +
+      '<div data-exlist class="stack"></div></div>';
+    var frag = document.createElement("div");
+    frag.innerHTML = html;
+    var wrap = frag.firstChild;
+    renderExampleList(wrap.querySelector("[data-exlist]"));
+    wireChips(wrap.querySelector("[data-exchips]"), "exUnit", function () {
+      renderExampleList(wrap.querySelector("[data-exlist]"));
+    });
+    return wrap;
+  }
+
+  function renderExampleList(host) {
+    host.innerHTML = "";
+    var list = DATA.examples.filter(function (e) {
+      return state.exUnit === 0 || e.unit === state.exUnit;
+    });
+    for (var i = 0; i < list.length; i++) {
+      host.appendChild(exampleCard(list[i]));
+    }
+  }
+
+  /* ============================ PRACTICE TAB ============================= */
+
+  function problemCard(p) {
+    var ctl = new MachineCtl();
+    var isSolved = solved.indexOf(p.id) >= 0;
+    var starterCells = E.assemble(p.starter).dataCells;
+    var html = '<article class="card' + (isSolved ? " solved" : "") + '" data-pid="' + esc(p.id) + '">' +
+      '<div class="brow">' + unitBadge(p.unit) + diffBadge(p.difficulty) +
+      (isSolved ? '<span class="badge solv">✓ SOLVED</span>' : "") +
+      "<h3>" + esc(p.title) + "</h3></div>" +
+      '<p class="kick">' + esc(p.topic) + "</p>" +
+      '<p class="stmt">' + renderInline(p.statement) + "</p>";
+
+    html += '<div class="reqbox"><div class="rh">requirements</div><ul>';
+    for (var i = 0; i < p.requirements.length; i++) {
+      html += "<li>" + renderInline(p.requirements[i]) + "</li>";
+    }
+    html += "</ul>";
+    var cons = p.constraints || {};
+    if (cons.banned) {
+      for (var b = 0; b < cons.banned.length; b++) {
+        html += '<span class="conchip ban">⨯ no <b>' + esc(cons.banned[b].token) + "</b></span>";
+      }
+    }
+    if (cons.required) {
+      for (var q = 0; q < cons.required.length; q++) {
+        var tok = cons.required[q].token === ")+ " ? " )+ " : cons.required[q].token;
+        html += '<span class="conchip req">✓ must use <b>' + esc(tok) + "</b></span>";
+      }
+    }
+    if (cons.maxSteps !== undefined) {
+      html += '<span class="conchip max">≤ ' + cons.maxSteps + " instructions</span>";
+    }
+    html += "</div>";
+
+    html += '<textarea class="editor" rows="14" spellcheck="false" aria-label="Assembly code editor" data-code></textarea>';
+    html += '<div class="controls" style="margin-top:12px">' +
+      '<button type="button" class="btn primary act-verify">▶ Run &amp; Verify</button>' +
+      '<button type="button" class="btn act-reset">↺ reset code</button>' +
+      '<span class="steps">write below the -- TODO lines · Tab indents</span></div>';
+    html += '<div data-controls style="margin-top:12px">' + traceControlsHTML("Re-run", false, -1, -1) + "</div>";
+    html += '<div data-panels></div>';
+
+    /* hidden solution */
+    html += '<details class="plain" style="margin-top:16px;margin-bottom:0"><summary>🔑 show solution — try at least one run before opening it</summary><div class="inner">' +
+      codeBlock(p.solution) +
+      '<div style="border:1px solid var(--inline);background:var(--w70);border-radius:8px;padding:12px 14px">' +
+      '<div class="rh" style="font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#22304a;margin-bottom:6px">how it works</div><ul>';
+    for (var s = 0; s < p.solutionNotes.length; s++) {
+      html += "<li>" + renderInline(p.solutionNotes[s]) + "</li>";
+    }
+    html += "</ul></div></div></details>";
+    html += "</article>";
+
+    var root = document.createElement("div");
+    root.innerHTML = html;
+    var el = root.firstChild;
+    var code = p.starter;
+    var ta = el.querySelector("[data-code]");
+    wireEditor(ta, function () { return code; }, function (v) { code = v; });
+
+    function doRun() {
+      var oc = ctl.run(code, p.checks, p.constraints);
+      if (!oc) {
+        toast("Assembler errors — fix the highlighted lines first.", "", false);
+        return null;
+      }
+      var nChecks = oc.verification.results.length + oc.verification.constraintResults.length;
+      if (oc.verification.allPass) {
+        markSolved(p.id);
+        el.classList.add("solved");
+        if (!isSolved) {
+          var brow = el.querySelector(".brow");
+          if (!brow.querySelector(".badge.solv")) {
+            brow.insertAdjacentHTML("beforeend", '<span class="badge solv">✓ SOLVED</span>');
+          }
+        }
+        toast("Solved: " + p.title, "All " + nChecks + " checks passed in " + oc.run.stepsExecuted + " instructions.", true);
+      } else {
+        toast("Not quite yet", "Some checks failed — read the red rows for a hint.", false);
+      }
+      return oc;
+    }
+
+    el.querySelector(".act-verify").addEventListener("click", function () {
+      doRun();
+      wire.refreshNow();
+      wire.syncActive();
+    });
+    el.querySelector(".act-reset").addEventListener("click", function () {
+      code = p.starter;
+      ta.value = code;
+      ctl.reset();
+      wire.refreshNow();
+      wire.syncActive();
+    });
+    var wire = wireMachine(el, ctl, function () { return code; }, {
+      showVerify: true,
+      starterCells: function () { return starterCells; },
+      onRun: doRun
+    });
+    return el;
+  }
+
+  function practiceTab() {
+    cards = [];
+    var html = '<div class="stack">' +
+      '<div class="masthead"><h2>Practice problems — write &amp; verify</h2>' +
+      "<p>Each problem gives you a statement, starter code and the machine&#39;s initial state. " +
+      "Write your program in the box, press <b>Run &amp; Verify</b>, and the checker assembles your code, " +
+      "executes it and compares the final registers and memory against the expected results — plus any " +
+      "special rules (no <code>MUL</code>, use <code>(R0)+</code>, stay under N instructions). Stuck? A " +
+      "hidden dropdown right below the question holds the full commented solution.</p></div>" +
+      '<div class="chips" data-pchips>' +
+      chipBtn("pUnit", 0, "all units", true) +
+      chipBtn("pUnit", 3, "unit 3", false) +
+      chipBtn("pUnit", 4, "unit 4", false) +
+      '<span class="sep"></span>' +
+      chipBtn("pDiff", "", "any level", true) +
+      chipBtn("pDiff", "basic", "basic", false) +
+      chipBtn("pDiff", "medium", "medium", false) +
+      chipBtn("pDiff", "hard", "hard", false) +
+      '<span class="sep"></span>' +
+      chipBtn("pStatus", "", "all", true) +
+      chipBtn("pStatus", "open", "unsolved", false) +
+      chipBtn("pStatus", "solved", "solved", false) +
+      "</div>" +
+      '<div data-plist class="stack"></div></div>';
+    var frag = document.createElement("div");
+    frag.innerHTML = html;
+    var wrap = frag.firstChild;
+    renderProblemList(wrap.querySelector("[data-plist]"));
+    wireChips(wrap.querySelector("[data-pchips]"), null, function () {
+      renderProblemList(wrap.querySelector("[data-plist]"));
+    });
+    return wrap;
+  }
+
+  function renderProblemList(host) {
+    host.innerHTML = "";
+    var list = DATA.problems.filter(function (p) {
+      if (state.pUnit !== 0 && p.unit !== state.pUnit) return false;
+      if (state.pDiff !== "" && p.difficulty !== state.pDiff) return false;
+      if (state.pStatus === "solved" && solved.indexOf(p.id) < 0) return false;
+      if (state.pStatus === "open" && solved.indexOf(p.id) >= 0) return false;
+      return true;
+    });
+    if (list.length === 0) {
+      host.innerHTML = '<div class="empty">nothing matches these filters — nice progress though.</div>';
+      return;
+    }
+    for (var i = 0; i < list.length; i++) {
+      host.appendChild(problemCard(list[i]));
+    }
+  }
+
+  /* =========================== PLAYGROUND TAB ============================ */
+
+  var PLAYGROUND_TEMPLATE = "-- Free playground: the whole COA-8 ISA is available.\n" +
+    "        ORG    0\n" +
+    "        Move   #LIST, R0     -- pointer to the data\n" +
+    "        Load   N, R1\n" +
+    "        Clear  R2\n" +
+    "LOOP:   Add    (R0)+, R2     -- sum with autoincrement\n" +
+    "        Decrement R1\n" +
+    "        Branch>0 LOOP\n" +
+    "        Store  R2, SUM\n" +
+    "        Halt\n" +
+    "\n" +
+    "N:      DATAWORD 4\n" +
+    "LIST:   DATAWORD 10, 20, 30, 40\n" +
+    "SUM:    DATAWORD 0";
+
+  function playgroundTab() {
+    var ctl = new MachineCtl();
+    var code = PLAYGROUND_TEMPLATE;
+    var starterCells = E.assemble(code).dataCells;
+    var html = '<div class="card">' +
+      '<div class="pghead"><h3>Free playground</h3>' +
+      "<p>No checks, no rules — assemble anything, run it, and watch every register, flag and " +
+      "memory cell change step by step. Great for testing exam ideas like “what does Branch≥0 do " +
+      "after Compare with equal values?”.</p></div>" +
+      '<textarea class="editor" rows="14" spellcheck="false" aria-label="Assembly code editor" data-code></textarea>' +
+      '<div data-controls style="margin-top:12px">' + traceControlsHTML("Assemble &amp; Run", false, -1, -1) + "</div>" +
+      '<div data-panels></div></div>';
+    var root = document.createElement("div");
+    root.innerHTML = html;
+    var el = root.firstChild;
+    var ta = el.querySelector("[data-code]");
+    wireEditor(ta, function () { return code; }, function (v) { code = v; });
+
+    var wire = wireMachine(el, ctl, function () { return code; }, {
+      showVerify: false,
+      starterCells: function () { return starterCells; },
+      onRun: function () { return ctl.run(code, []); }
+    });
+    return el;
+  }
+
+  /* ------------------------------ tabs/chips ------------------------------ */
+
+  var state = { tab: "examples", exUnit: 0, pUnit: 0, pDiff: "", pStatus: "" };
+
+  function chipBtn(group, val, label, on) {
+    return '<button type="button" class="chip' + (on ? " on" : "") + '" data-group="' + group +
+      '" data-val="' + esc(String(val)) + '">' + label + "</button>";
+  }
+
+  function wireChips(host, fixedGroup, onChange) {
+    var btns = host.querySelectorAll(".chip");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener("click", function (ev) {
+        var b = ev.currentTarget;
+        var group = b.getAttribute("data-group") || fixedGroup;
+        var val = b.getAttribute("data-val");
+        if (group === "exUnit") state.exUnit = parseInt(val, 10);
+        else if (group === "pUnit") state.pUnit = parseInt(val, 10);
+        else if (group === "pDiff") state.pDiff = val;
+        else if (group === "pStatus") state.pStatus = val;
+        var peers = host.querySelectorAll('.chip[data-group="' + group + '"]');
+        for (var k = 0; k < peers.length; k++) peers[k].classList.toggle("on", peers[k] === b);
+        onChange();
+      });
+    }
+  }
+
+  function renderTab() {
+    var main = document.getElementById("main");
+    cards = [];
+    if (state.tab === "reference") main.innerHTML = refTab();
+    else if (state.tab === "examples") { main.innerHTML = ""; main.appendChild(examplesTab()); }
+    else if (state.tab === "practice") { main.innerHTML = ""; main.appendChild(practiceTab()); }
+    else { main.innerHTML = ""; main.appendChild(playgroundTab()); }
+    window.scrollTo(0, 0);
+  }
+
+  function init() {
+    var nav = document.querySelectorAll("nav.tabs button");
+    for (var i = 0; i < nav.length; i++) {
+      nav[i].addEventListener("click", function (ev) {
+        state.tab = ev.currentTarget.getAttribute("data-tab");
+        var all = document.querySelectorAll("nav.tabs button");
+        for (var k = 0; k < all.length; k++) all[k].classList.toggle("on", all[k] === ev.currentTarget);
+        renderTab();
+      });
+    }
+    updateProgress();
+    renderTab();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
+</script>
+</body>
+</html>
